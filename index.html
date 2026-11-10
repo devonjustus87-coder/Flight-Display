@@ -1,139 +1,295 @@
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Overhead Flight LED Display</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            background-color: #0b0f19;
-            color: #fff;
-            font-family: monospace, sans-serif;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
-        }
-        .container {
-            width: 90%;
-            max-width: 800px;
-            background: #111;
-            border: 8px solid #222;
-            border-radius: 12px;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.8), 0 10px 30px rgba(0,0,0,0.5);
-            padding: 20px;
-            position: relative;
-        }
-        .scanlines {
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            background-size: 100% 4px, 6px 100%;
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            pointer-events: none;
-            border-radius: 4px;
-        }
-        .matrix-row {
-            font-size: 28px;
-            font-weight: bold;
-            letter-spacing: 2px;
-            margin: 12px 0;
-            text-transform: uppercase;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .row-airline { color: #fff; font-size: 32px; }
-        .row-route { color: #ff3333; }
-        .row-aircraft { color: #ffaa00; }
-        .row-label { color: #888; font-size: 20px; margin-top: 16px; }
-        .row-destination { color: #33ccff; }
-        .controls {
-            margin-top: 20px;
-            text-align: center;
-        }
-        button {
-            background: #222;
-            color: #0f0;
-            border: 2px solid #0f0;
-            padding: 10px 20px;
-            font-family: monospace;
-            font-size: 16px;
-            cursor: pointer;
-            border-radius: 6px;
-        }
-        button:active { background: #0f0; color: #000; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Retro Flight Matrix Display</title>
+<style>
+o	{
+o	box-sizing: border-box;
+o	margin: 0;
+o	padding: 0;
+o	user-select: none;
+o	-webkit-user-select: none;
+o	}
+o	body {
+o	background-color: #050505;
+o	color: #ffffff;
+o	font-family: "Courier New", Courier, monospace, monospace;
+o	display: flex;
+o	justify-content: center;
+o	align-items: center;
+o	min-height: 100vh;
+o	overflow: hidden;
+o	}
+o	.container {
+o	width: 100%;
+o	max-width: 900px;
+o	padding: 10px;
+o	}
+o	.matrix-frame {
+o	background-color: #0a0a0c;
+o	border: 12px solid #1a1a1e;
+o	border-radius: 8px;
+o	box-shadow: 0 0 30px rgba(0,0,0,0.9), inset 0 0 15px rgba(0,0,0,0.8);
+o	position: relative;
+o	padding: 20px;
+o	}
+o	.matrix-grid {
+o	position: relative;
+o	background-color: #020202;
+o	border: 2px solid #111;
+o	padding: 15px;
+o	box-shadow: inset 0 0 20px rgba(0,0,0,1);
+o	}
+o	.scanlines {
+o	position: absolute;
+o	top: 0; left: 0; right: 0; bottom: 0;
+o	background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.4) 50%);
+o	background-size: 100% 4px;
+o	z-index: 10;
+o	pointer-events: none;
+o	}
+o	.header-bar {
+o	display: flex;
+o	justify-content: space-between;
+o	align-items: center;
+o	border-bottom: 2px dashed #222;
+o	padding-bottom: 8px;
+o	margin-bottom: 15px;
+o	font-size: 12px;
+o	color: #666;
+o	}
+o	.top-btn {
+o	background: #151518;
+o	border: 1px solid #333;
+o	color: #aaa;
+o	padding: 4px 8px;
+o	font-family: inherit;
+o	font-size: 11px;
+o	cursor: pointer;
+o	border-radius: 3px;
+o	}
+o	.top-btn:active { background: #333; color: #fff; }
+o	.line {
+o	display: flex;
+o	align-items: center;
+o	min-height: 48px;
+o	margin-bottom: 10px;
+o	white-space: nowrap;
+o	overflow: hidden;
+o	font-weight: bold;
+o	letter-spacing: 2px;
+o	text-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
+o	}
+o	.logo-canvas {
+o	margin-right: 15px;
+o	background: transparent;
+o	}
+o	.text-white { color: #ffffff; text-shadow: 0 0 8px rgba(255,255,255,0.7); }
+o	.text-amber { color: #ffb000; text-shadow: 0 0 8px rgba(255,176,0,0.7); }
+o	.text-red { color: #ff3333; text-shadow: 0 0 8px rgba(255,51,51,0.7); }
+o	.text-green { color: #33ff33; text-shadow: 0 0 8px rgba(51,255,51,0.7); }
+o	.text-cyan { color: #00e5ff; text-shadow: 0 0 8px rgba(0,229,255,0.7); }
+o	.font-lg { font-size: 28px; }
+o	.font-md { font-size: 22px; }
+o	.font-sm { font-size: 16px; }
+.overlay-screen {
+position: absolute;
+top: 0; left: 0; right: 0; bottom: 0;
+background: rgba(5, 5, 5, 0.95);
+z-index: 20;
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: center;
+text-align: center;
+padding: 20px;
+}
+.btn-action {
+background: #ffb000;
+color: #000;
+border: none;
+padding: 12px 24px;
+font-family: inherit;
+font-weight: bold;
+font-size: 16px;
+cursor: pointer;
+border-radius: 4px;
+margin-top: 15px;
+box-shadow: 0 0 10px rgba(255,176,0,0.5);
+}
+.settings-row {
+display: flex;
+align-items: center;
+justify-content: space-between;
+width: 80%;
+max-width: 400px;
+margin: 12px 0;
+font-size: 16px;
+}
+.btn-adj {
+background: #222;
+border: 1px solid #555;
+color: #fff;
+width: 36px;
+height: 36px;
+font-size: 20px;
+cursor: pointer;
+border-radius: 4px;
+}
+</style>
 </head>
 <body>
-
 <div class="container">
-    <div class="scanlines"></div>
-    <div id="line1" class="matrix-row row-airline">SYSTEM STANDBY</div>
-    <div id="line2" class="matrix-row row-route">-- / --</div>
-    <div id="line3" class="matrix-row row-aircraft">SCANNING AIRSPACE</div>
-    <div id="line4" class="matrix-row row-label">Status</div>
-    <div id="line5" class="matrix-row row-destination">Waiting for overhead pass...</div>
+<div class="matrix-frame">
+<div class="matrix-grid">
+<div class="scanlines"></div>
+<div class="header-bar">
+<span>RADAR MON: <span id="status-lbl" class="text-green">ACTIVE</span></span>
+<div>
+<button class="top-btn" id="btn-audio-toggle" onclick="toggleMute()">CHIME: ON</button>
+<button class="top-btn" onclick="openSettings()">⚙ SETTINGS</button>
 </div>
-
-<div class="controls">
-    <button onclick="triggerSimulatedPass()">SIMULATE OVERHEAD PASS</button>
 </div>
-
+<div id="line-1" class="line font-lg text-white">
+<canvas id="logo-canvas" class="logo-canvas" width="40" height="32"></canvas>
+<span id="txt-airline">SCANNING...</span>
+</div>
+<div id="line-2" class="line font-lg text-amber">
+<span id="txt-route">STANDBY</span>
+</div>
+<div id="line-3" class="line font-lg text-white">
+<span id="txt-aircraft">NO OVERHEAD TARGET</span>
+</div>
+<div id="line-4" class="line font-md text-red">
+<span id="txt-label">AIRSPACE CLEAR</span>
+</div>
+<div id="line-5" class="line font-md text-white">
+<span id="txt-origin">NEXT SCAN IN 10S</span>
+</div>
+</div>
+</div>
+</div>
+<div id="audio-overlay" class="overlay-screen">
+<h2 class="text-amber" style="margin-bottom:10px;">RETRO FLIGHT RADAR</h2>
+<p class="text-white" style="margin-bottom:15px; font-size: 14px;">Tap below to enable audio chimes for iOS 5 Safari compatibility.</p>
+<button class="btn-action" onclick="enableAudioAndStart()">TAP TO START RADAR</button>
+</div>
+<div id="settings-overlay" class="overlay-screen" style="display:none;">
+<h2 class="text-cyan" style="margin-bottom:20px;">RADAR SETTINGS</h2>
+<div class="settings-row">
+<span>AIRSPACE RADIUS:</span>
+<div>
+<button class="btn-adj" onclick="adjustRadius(-5)">-</button>
+<span id="val-radius" class="text-amber" style="margin: 0 10px;">15 km</span>
+<button class="btn-adj" onclick="adjustRadius(5)">+</button>
+</div>
+</div>
+<div class="settings-row">
+<span>MAX ALTITUDE:</span>
+<div>
+<button class="btn-adj" onclick="adjustAlt(-5000)">-</button>
+<span id="val-alt" class="text-amber" style="margin: 0 10px;">40000 ft</span>
+<button class="btn-adj" onclick="adjustAlt(5000)">+</button>
+</div>
+</div>
+<button class="btn-action" style="background:#00e5ff;" onclick="closeSettings()">SAVE & EXIT</button>
+</div>
 <script>
-    function playAirportChime() {
-        try {
-            var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            var now = audioCtx.currentTime;
-            
-            // Chime 1 (High tone)
-            var osc1 = audioCtx.createOscillator();
-            var gain1 = audioCtx.createGain();
-            osc1.type = 'sine';
-            osc1.frequency.setValueAtTime(698.46, now); // F5
-            gain1.gain.setValueAtTime(0.3, now);
-            gain1.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
-            osc1.connect(gain1);
-            gain1.connect(audioCtx.destination);
-            osc1.start(now);
-            osc1.stop(now + 1.2);
-
-            // Chime 2 (Low tone)
-            var osc2 = audioCtx.createOscillator();
-            var gain2 = audioCtx.createGain();
-            osc2.type = 'sine';
-            osc2.frequency.setValueAtTime(523.25, now + 0.3); // C5
-            gain2.gain.setValueAtTime(0.3, now + 0.3);
-            gain2.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
-            osc2.connect(gain2);
-            gain2.connect(audioCtx.destination);
-            osc2.start(now + 0.3);
-            osc2.stop(now + 1.8);
-        } catch(e) {
-            // Fallback for older audio contexts
-        }
-    }
-
-    function triggerSimulatedPass() {
-        playAirportChime();
-        document.getElementById('line1').innerHTML = "Emirates";
-        document.getElementById('line2').innerHTML = "DXB-LAX";
-        document.getElementById('line3').innerHTML = "A380-800";
-        document.getElementById('line4').innerHTML = "Arriving from";
-        document.getElementById('line5').innerHTML = "Dubai Intl";
-
-        setTimeout(function() {
-            document.getElementById('line1').innerHTML = "SYSTEM STANDBY";
-            document.getElementById('line2').innerHTML = "-- / --";
-            document.getElementById('line3').innerHTML = "SCANNING AIRSPACE";
-            document.getElementById('line4').innerHTML = "Status";
-            document.getElementById('line5').innerHTML = "Waiting for overhead pass...";
-        }, 10000);
-    }
+var audioCtx = null;
+var audioMuted = false;
+var currentRadius = 15;
+var maxAltitude = 40000;
+var isAlertActive = false;
+function enableAudioAndStart() {
+try {
+var AudioContextClass = window.AudioContext || window.webkitAudioContext;
+if (AudioContextClass) {
+audioCtx = new AudioContextClass();
+}
+} catch(e) {}
+document.getElementById('audio-overlay').style.display = 'none';
+playAirportChime();
+startRadarLoop();
+}
+function toggleMute() {
+audioMuted = !audioMuted;
+document.getElementById('btn-audio-toggle').innerText = audioMuted ? "CHIME: OFF" : "CHIME: ON";
+}
+function playAirportChime() {
+if (audioMuted || !audioCtx) return;
+try {
+var now = audioCtx.currentTime;
+var osc1 = audioCtx.createOscillator();
+var gain1 = audioCtx.createGain();
+osc1.type = 'sine';
+osc1.frequency.setValueAtTime(698.46, now);
+gain1.gain.setValueAtTime(0.3, now);
+gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+osc1.connect(gain1);
+gain1.connect(audioCtx.destination);
+osc1.start(now);
+osc1.stop(now + 0.8);
+var osc2 = audioCtx.createOscillator();
+var gain2 = audioCtx.createGain();
+osc2.type = 'sine';
+osc2.frequency.setValueAtTime(523.25, now + 0.4);
+gain2.gain.setValueAtTime(0.3, now + 0.4);
+gain2.gain.exponentialRampToValueAtTime(0.001, now + 1.4);
+osc2.connect(gain2);
+gain2.connect(audioCtx.destination);
+osc2.start(now + 0.4);
+osc2.stop(now + 1.4);
+} catch(e) {}
+}
+function openSettings() {
+document.getElementById('settings-overlay').style.display = 'flex';
+}
+function closeSettings() {
+document.getElementById('settings-overlay').style.display = 'none';
+}
+function adjustRadius(delta) {
+currentRadius += delta;
+if (currentRadius < 5) currentRadius = 5;
+if (currentRadius > 50) currentRadius = 50;
+document.getElementById('val-radius').innerText = currentRadius + ' km';
+}
+function adjustAlt(delta) {
+maxAltitude += delta;
+if (maxAltitude < 10000) maxAltitude = 10000;
+if (maxAltitude > 50000) maxAltitude = 50000;
+document.getElementById('val-alt').innerText = maxAltitude + ' ft';
+}
+function drawDotLogo(type) {
+var canvas = document.getElementById('logo-canvas');
+var ctx = canvas.getContext('2d');
+ctx.clearRect(0, 0, 40, 32);
+ctx.fillStyle = '#ff3333';
+ctx.fillRect(4, 4, 32, 24);
+ctx.fillStyle = '#020202';
+ctx.fillRect(8, 8, 24, 16);
+}
+function startRadarLoop() {
+drawDotLogo('emirates');
+setInterval(function() {
+isAlertActive = !isAlertActive;
+if (isAlertActive) {
+document.getElementById('txt-airline').innerText = "Emirates";
+document.getElementById('txt-route').innerText = "DXB-LAX";
+document.getElementById('txt-aircraft').innerText = "A380-800";
+document.getElementById('txt-label').innerText = "Arriving from";
+document.getElementById('txt-origin').innerText = "Dubai Intl";
+playAirportChime();
+} else {
+document.getElementById('txt-airline').innerText = "SCANNING...";
+document.getElementById('txt-route').innerText = "STANDBY";
+document.getElementById('txt-aircraft').innerText = "NO OVERHEAD TARGET";
+document.getElementById('txt-label').innerText = "AIRSPACE CLEAR";
+document.getElementById('txt-origin').innerText = "RADIUS: " + currentRadius + "KM";
+}
+}, 12000);
+}
 </script>
-
 </body>
 </html>
