@@ -1,0 +1,139 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Overhead Flight LED Display</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: #0b0f19;
+            color: #fff;
+            font-family: monospace, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .container {
+            width: 90%;
+            max-width: 800px;
+            background: #111;
+            border: 8px solid #222;
+            border-radius: 12px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8), 0 10px 30px rgba(0,0,0,0.5);
+            padding: 20px;
+            position: relative;
+        }
+        .scanlines {
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 4px, 6px 100%;
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            border-radius: 4px;
+        }
+        .matrix-row {
+            font-size: 28px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin: 12px 0;
+            text-transform: uppercase;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .row-airline { color: #fff; font-size: 32px; }
+        .row-route { color: #ff3333; }
+        .row-aircraft { color: #ffaa00; }
+        .row-label { color: #888; font-size: 20px; margin-top: 16px; }
+        .row-destination { color: #33ccff; }
+        .controls {
+            margin-top: 20px;
+            text-align: center;
+        }
+        button {
+            background: #222;
+            color: #0f0;
+            border: 2px solid #0f0;
+            padding: 10px 20px;
+            font-family: monospace;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 6px;
+        }
+        button:active { background: #0f0; color: #000; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="scanlines"></div>
+    <div id="line1" class="matrix-row row-airline">SYSTEM STANDBY</div>
+    <div id="line2" class="matrix-row row-route">-- / --</div>
+    <div id="line3" class="matrix-row row-aircraft">SCANNING AIRSPACE</div>
+    <div id="line4" class="matrix-row row-label">Status</div>
+    <div id="line5" class="matrix-row row-destination">Waiting for overhead pass...</div>
+</div>
+
+<div class="controls">
+    <button onclick="triggerSimulatedPass()">SIMULATE OVERHEAD PASS</button>
+</div>
+
+<script>
+    function playAirportChime() {
+        try {
+            var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            var now = audioCtx.currentTime;
+            
+            // Chime 1 (High tone)
+            var osc1 = audioCtx.createOscillator();
+            var gain1 = audioCtx.createGain();
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(698.46, now); // F5
+            gain1.gain.setValueAtTime(0.3, now);
+            gain1.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+            osc1.connect(gain1);
+            gain1.connect(audioCtx.destination);
+            osc1.start(now);
+            osc1.stop(now + 1.2);
+
+            // Chime 2 (Low tone)
+            var osc2 = audioCtx.createOscillator();
+            var gain2 = audioCtx.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(523.25, now + 0.3); // C5
+            gain2.gain.setValueAtTime(0.3, now + 0.3);
+            gain2.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
+            osc2.connect(gain2);
+            gain2.connect(audioCtx.destination);
+            osc2.start(now + 0.3);
+            osc2.stop(now + 1.8);
+        } catch(e) {
+            // Fallback for older audio contexts
+        }
+    }
+
+    function triggerSimulatedPass() {
+        playAirportChime();
+        document.getElementById('line1').innerHTML = "Emirates";
+        document.getElementById('line2').innerHTML = "DXB-LAX";
+        document.getElementById('line3').innerHTML = "A380-800";
+        document.getElementById('line4').innerHTML = "Arriving from";
+        document.getElementById('line5').innerHTML = "Dubai Intl";
+
+        setTimeout(function() {
+            document.getElementById('line1').innerHTML = "SYSTEM STANDBY";
+            document.getElementById('line2').innerHTML = "-- / --";
+            document.getElementById('line3').innerHTML = "SCANNING AIRSPACE";
+            document.getElementById('line4').innerHTML = "Status";
+            document.getElementById('line5').innerHTML = "Waiting for overhead pass...";
+        }, 10000);
+    }
+</script>
+
+</body>
+</html>
