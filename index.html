@@ -1,251 +1,319 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Flightradar24 Style Tracker</title>
-<style>
-o	{ box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
-o	body { background-color: #121214; color: #e1e1e6; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
-.container { width: 100%; max-width: 480px; padding: 12px; }
-/* Flightradar24 Style Card /
-.fr24-card { background-color: #1f1f23; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.6); overflow: hidden; border: 1px solid #2e2e36; }
-/* Top Airline Header /
-.card-header { background-color: #18181b; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2e2e36; }
-.flight-badges { display: flex; gap: 6px; align-items: center; }
-.badge-callsign { background-color: #ff9900; color: #000; font-weight: 800; font-size: 15px; padding: 3px 8px; border-radius: 4px; }
-.badge-code { background-color: #3f3f46; color: #fff; font-size: 12px; padding: 3px 6px; border-radius: 4px; font-weight: 600; }
-.badge-type { background-color: #0284c7; color: #fff; font-size: 12px; padding: 3px 6px; border-radius: 4px; font-weight: 600; }
-.airline-name { font-size: 14px; color: #a1a1aa; margin-top: 4px; padding-left: 16px; font-weight: 500; }
-/* Route & Telemetry Grid Sections /
-.card-body { padding: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.data-box { background-color: #27272a; border-radius: 8px; padding: 12px; border: 1px solid #3f3f46; }
-.data-box.full-width { grid-column: span 2; }
-.label { font-size: 11px; text-transform: uppercase; color: #a1a1aa; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 4px; }
-.value { font-size: 20px; font-weight: 700; color: #fff; }
-.sub-value { font-size: 12px; color: #d4d4d8; margin-top: 2px; }
-/* Utility Control Bar /
-.utility-bar { background-color: #18181b; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #2e2e36; font-size: 12px; }
-.util-btn { background: #27272a; border: 1px solid #52525b; color: #fff; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; }
-.util-btn:active { background: #3f3f46; }
-/* Overlays /
-.overlay-screen { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #121214; z-index: 20; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 24px; }
-.btn-action { background: #ff9900; color: #000; border: none; padding: 14px 28px; font-weight: 700; font-size: 16px; cursor: pointer; border-radius: 8px; margin-top: 20px; }
-.settings-row { display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 360px; margin: 12px 0; font-size: 15px; background: #1f1f23; padding: 12px 16px; border-radius: 8px; border: 1px solid #3f3f46; }
-.btn-adj { background: #3f3f46; border: none; color: #fff; width: 36px; height: 36px; font-size: 18px; cursor: pointer; border-radius: 6px; font-weight: bold; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Flightradar24 Style Tracker</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+        body { background-color: #121214; color: #e1e1e6; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
+        
+        .container { width: 100%; max-width: 480px; padding: 12px; }
+        
+        /* Flightradar24 Style Card */
+        .fr24-card { background-color: #1f1f23; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.6); overflow: hidden; border: 1px solid #2e2e36; }
+        
+        /* Top Airline Header */
+        .card-header { background-color: #18181b; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2e2e36; }
+        .flight-badges { display: flex; gap: 6px; align-items: center; }
+        .badge-callsign { background-color: #ff9900; color: #000; font-weight: 800; font-size: 15px; padding: 3px 8px; border-radius: 4px; }
+        .badge-code { background-color: #3f3f46; color: #fff; font-size: 12px; padding: 3px 6px; border-radius: 4px; font-weight: 600; }
+        .badge-type { background-color: #0284c7; color: #fff; font-size: 12px; padding: 3px 6px; border-radius: 4px; font-weight: 600; }
+        
+        .airline-name { font-size: 14px; color: #a1a1aa; margin-top: 4px; padding-left: 16px; font-weight: 500; }
+        
+        /* Route & Telemetry Grid Sections */
+        .card-body { padding: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        
+        .data-box { background-color: #27272a; border-radius: 8px; padding: 12px; border: 1px solid #3f3f46; }
+        .data-box.full-width { grid-column: span 2; }
+        
+        .label { font-size: 11px; text-transform: uppercase; color: #a1a1aa; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .value { font-size: 20px; font-weight: 700; color: #fff; }
+        .sub-value { font-size: 12px; color: #d4d4d8; margin-top: 2px; }
+        
+        /* Utility Control Bar */
+        .utility-bar { background-color: #18181b; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #2e2e36; font-size: 12px; }
+        .util-btn { background: #27272a; border: 1px solid #52525b; color: #fff; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        .util-btn:active { background: #3f3f46; }
+
+        /* Overlays */
+        .overlay-screen { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #121214; z-index: 20; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 24px; }
+        .btn-action { background: #ff9900; color: #000; border: none; padding: 14px 28px; font-weight: 700; font-size: 16px; cursor: pointer; border-radius: 8px; margin-top: 20px; }
+        
+        .settings-row { display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 360px; margin: 12px 0; font-size: 15px; background: #1f1f23; padding: 12px 16px; border-radius: 8px; border: 1px solid #3f3f46; }
+        .btn-adj { background: #3f3f46; border: none; color: #fff; width: 36px; height: 36px; font-size: 18px; cursor: pointer; border-radius: 6px; font-weight: bold; }
+    </style>
 </head>
 <body>
+
 <div class="container">
-<div class="fr24-card">
-<!-- Header: Callsign & Type -->
-<div class="card-header">
-<div class="flight-badges">
-<span id="txt-callsign" class="badge-callsign">SCANNING</span>
-<span id="txt-icaocode" class="badge-code">--</span>
-<span id="txt-typecode" class="badge-type">ADS-B</span>
+    <div class="fr24-card">
+        <!-- Header: Callsign & Type -->
+        <div class="card-header">
+            <div class="flight-badges">
+                <span id="txt-callsign" class="badge-callsign">SCANNING</span>
+                <span id="txt-icaocode" class="badge-code">--</span>
+                <span id="txt-typecode" class="badge-type">ADS-B</span>
+            </div>
+        </div>
+        <div id="txt-airline" class="airline-name" style="padding-top:8px;">Live Airspace Radar</div>
+
+        <!-- Card Body Layout -->
+        <div class="card-body">
+            <!-- Route Box -->
+            <div class="data-box">
+                <div class="label">Overhead Range</div>
+                <div id="txt-distance" class="value">-- km</div>
+                <div id="txt-status" class="sub-value">Searching airspace</div>
+            </div>
+
+            <!-- Altitude Box -->
+            <div class="data-box">
+                <div class="label">Barometric Alt.</div>
+                <div id="txt-altitude" class="value">0 ft</div>
+                <div id="txt-speed" class="sub-value">Ground Speed: 0 kts</div>
+            </div>
+
+            <!-- Aircraft Details Full Width -->
+            <div class="data-box full-width">
+                <div class="label">Position & GPS Coordinates</div>
+                <div id="txt-pos" class="value" style="font-size: 16px; font-family: monospace;">LAT: -- | LON: --</div>
+                <div id="txt-squawk" class="sub-value" style="margin-top: 4px;">ICAO Hex: --</div>
+            </div>
+        </div>
+
+        <!-- Utility Bar -->
+        <div class="utility-bar">
+            <span id="gps-status" style="color: #4ade80; font-weight: 600;">● GPS ACTIVE</span>
+            <div>
+                <button class="util-btn" id="btn-audio-toggle" onclick="toggleMute()">CHIME: ON</button>
+                <button class="util-btn" onclick="openSettings()">⚙ SETTINGS</button>
+            </div>
+        </div>
+    </div>
 </div>
-</div>
-<div id="txt-airline" class="airline-name" style="padding-top:8px;">Live Airspace Radar</div>
-<!-- Card Body Layout -->
-<div class="card-body">
-<!-- Route Box -->
-<div class="data-box">
-<div class="label">Overhead Range</div>
-<div id="txt-distance" class="value">-- km</div>
-<div id="txt-status" class="sub-value">Searching airspace</div>
-</div>
-<!-- Altitude Box -->
-<div class="data-box">
-<div class="label">Barometric Alt.</div>
-<div id="txt-altitude" class="value">0 ft</div>
-<div id="txt-speed" class="sub-value">Ground Speed: 0 kts</div>
-</div>
-<!-- Aircraft Details Full Width -->
-<div class="data-box full-width">
-<div class="label">Position & GPS Coordinates</div>
-<div id="txt-pos" class="value" style="font-size: 16px; font-family: monospace;">LAT: -- | LON: --</div>
-<div id="txt-squawk" class="sub-value" style="margin-top: 4px;">ICAO Hex: --</div>
-</div>
-</div>
-<!-- Utility Bar -->
-<div class="utility-bar">
-<span id="gps-status" style="color: #4ade80; font-weight: 600;">● GPS ACTIVE</span>
-<div>
-<button class="util-btn" id="btn-audio-toggle" onclick="toggleMute()">CHIME: ON</button>
-<button class="util-btn" onclick="openSettings()">⚙ SETTINGS</button>
-</div>
-</div>
-</div>
-</div>
+
 <!-- Start Audio Overlay -->
 <div id="audio-overlay" class="overlay-screen" style="display:flex;">
-<h2 style="color: #ff9900; margin-bottom: 12px; font-size: 24px;">FLIGHTRADAR24 DISPLAY</h2>
-<p style="color: #a1a1aa; font-size: 14px; margin-bottom: 20px; line-height: 1.5;">Tap below to initialize GPS location access, live OpenSky feeds, and audio alerts.</p>
-<button class="btn-action" onclick="enableAudioAndStart()">LAUNCH RADAR</button>
+    <h2 style="color: #ff9900; margin-bottom: 12px; font-size: 24px;">FLIGHTRADAR24 DISPLAY</h2>
+    <p style="color: #a1a1aa; font-size: 14px; margin-bottom: 20px; line-height: 1.5;">Tap below to initialize GPS location access, live OpenSky feeds, and audio alerts.</p>
+    <button class="btn-action" onclick="enableAudioAndStart()">LAUNCH RADAR</button>
 </div>
+
 <!-- Settings Overlay -->
 <div id="settings-overlay" class="overlay-screen" style="display:none;">
-<h2 style="color: #38bdf8; margin-bottom: 24px; font-size: 22px;">RADAR CONFIGURATION</h2>
-<div class="settings-row">
-<span>AIRSPACE RADIUS:</span>
-<div>
-<button class="btn-adj" onclick="adjustRadius(-5)">-</button>
-<span id="val-radius" style="margin: 0 12px; font-weight:bold; color:#ff9900;">50 km</span>
-<button class="btn-adj" onclick="adjustRadius(5)">+</button>
+    <h2 style="color: #38bdf8; margin-bottom: 24px; font-size: 22px;">RADAR CONFIGURATION</h2>
+    
+    <div class="settings-row">
+        <span>AIRSPACE RADIUS:</span>
+        <div>
+            <button class="btn-adj" onclick="adjustRadius(-5)">-</button>
+            <span id="val-radius" style="margin: 0 12px; font-weight:bold; color:#ff9900;">50 km</span>
+            <button class="btn-adj" onclick="adjustRadius(5)">+</button>
+        </div>
+    </div>
+
+    <div class="settings-row">
+        <span>MAX ALTITUDE:</span>
+        <div>
+            <button class="btn-adj" onclick="adjustAlt(-5000)">-</button>
+            <span id="val-alt" style="margin: 0 12px; font-weight:bold; color:#ff9900;">45000 ft</span>
+            <button class="btn-adj" onclick="adjustAlt(5000)">+</button>
+        </div>
+    </div>
+
+    <button class="btn-action" style="background:#38bdf8; color:#000; width:100%; max-width:360px;" onclick="closeSettings()">SAVE & EXIT</button>
 </div>
-</div>
-<div class="settings-row">
-<span>MAX ALTITUDE:</span>
-<div>
-<button class="btn-adj" onclick="adjustAlt(-5000)">-</button>
-<span id="val-alt" style="margin: 0 12px; font-weight:bold; color:#ff9900;">45000 ft</span>
-<button class="btn-adj" onclick="adjustAlt(5000)">+</button>
-</div>
-</div>
-<button class="btn-action" style="background:#38bdf8; color:#000; width:100%; max-width:360px;" onclick="closeSettings()">SAVE & EXIT</button>
-</div>
+
 <script>
-let audioCtx = null;
-let audioMuted = false;
-let currentRadiusKm = 50; // Default expanded radius
-let maxAltFeet = 45000;
-let userLat = -33.8200; // Default Cape Town fallback
-let userLon = 18.4900;
-let lastOverheadIcao = "";
-function enableAudioAndStart() {
-try {
-const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-if (AudioContextClass) audioCtx = new AudioContextClass();
-} catch(e) {}
-document.getElementById('audio-overlay').style.display = 'none';
-getUserLocation();
-setInterval(fetchLiveFlights, 15000);
-}
-function getUserLocation() {
-if (navigator.geolocation) {
-navigator.geolocation.getCurrentPosition(
-function(pos) {
-userLat = pos.coords.latitude;
-userLon = pos.coords.longitude;
-document.getElementById('gps-status').innerText = "● GPS LOCKED";
-fetchLiveFlights();
-},
-function(err) {
-document.getElementById('gps-status').innerText = "● DEFAULT GPS";
-fetchLiveFlights();
-},
-{ enableHighAccuracy: true, timeout: 10000 }
-);
-} else {
-document.getElementById('gps-status').innerText = "● DEFAULT GPS";
-fetchLiveFlights();
-}
-}
-function fetchLiveFlights() {
-// Expand bounding box slightly more to catch approaching aircraft reliably
-const deltaDeg = (currentRadiusKm / 111.0) * 1.5;
-const lamin = userLat - deltaDeg;
-const lamax = userLat + deltaDeg;
-const lomin = userLon - deltaDeg;
-const lomax = userLon + deltaDeg;
-const url = `https://opensky-network.org/api/states/all?lamin=${lamin.toFixed(4)}&lomin=${lomin.toFixed(4)}&lamax=${lamax.toFixed(4)}&lomax=${lomax.toFixed(4)}`;
-fetch(url, { headers: { 'Accept': 'application/json' } })
-.then(res => {
-if (!res.ok) throw new Error('API Rate Limited');
-return res.json();
-})
-.then(data => {
-if (data && data.states) {
-processFlightData(data.states);
-} else {
-displayNoTarget("No ADS-B Feed");
-}
-})
-.catch(err => {
-displayNoTarget("API Rate Limited");
-});
-}
-function processFlightData(states) {
-if (!states || states.length === 0) {
-displayNoTarget("Airspace clear");
-lastOverheadIcao = "";
-return;
-}
-let closestPlane = null;
-let minDistance = 999999;
-for (let i = 0; i < states.length; i++) {
-const s = states[i];
-const icao = s[0];
-const callsign = (s[1] || "UNKNOWN").trim();
-const lon = s[5];
-const lat = s[6];
-const altMeters = s[7] || s[13] || 0;
-const velocityMs = s[9] || 0;
-const altFeet = Math.round(altMeters * 3.28084);
-if (altFeet > maxAltFeet) continue;
-const dist = calculateDistanceKm(userLat, userLon, lat, lon);
-if (dist <= currentRadiusKm && dist < minDistance) {
-minDistance = dist;
-closestPlane = {
-icao: icao,
-callsign: callsign,
-altFeet: altFeet,
-speedKts: Math.round(velocityMs * 1.94384),
-distKm: dist.toFixed(1),
-lat: lat.toFixed(4),
-lon: lon.toFixed(4)
-};
-}
-}
-if (closestPlane) {
-document.getElementById('txt-callsign').innerText = closestPlane.callsign !== "" ? closestPlane.callsign : "FLIGHT";
-document.getElementById('txt-icaocode').innerText = closestPlane.callsign !== "" ? closestPlane.callsign.substring(0,2) : "ICAO";
-document.getElementById('txt-airline').innerText = "Live Overhead Target Identified";
-document.getElementById('txt-distance').innerText = closestPlane.distKm + " km";
-document.getElementById('txt-status').innerText = "Directly Overhead";
-document.getElementById('txt-altitude').innerText = closestPlane.altFeet.toLocaleString() + " ft";
-document.getElementById('txt-speed').innerText = "Ground Speed: " + closestPlane.speedKts + " kts";
-document.getElementById('txt-pos').innerText = `LAT: ${closestPlane.lat} | LON: ${closestPlane.lon}`;
-document.getElementById('txt-squawk').innerText = "ICAO Hex: " + closestPlane.icao.toUpperCase();
-if (lastOverheadIcao !== closestPlane.icao) {
-playAirportChime();
-lastOverheadIcao = closestPlane.icao;
-}
-} else {
-displayNoTarget("Airspace clear");
-lastOverheadIcao = "";
-}
-}
-function displayNoTarget(statusText) {
-document.getElementById('txt-callsign').innerText = "STANDBY";
-document.getElementById('txt-icaocode').innerText = "--";
-document.getElementById('txt-airline').innerText = "Scanning local overhead frequencies";
-document.getElementById('txt-distance').innerText = "-- km";
-document.getElementById('txt-status').innerText = statusText;
-document.getElementById('txt-altitude').innerText = "0 ft";
-document.getElementById('txt-speed').innerText = "Ground Speed: 0 kts";
-document.getElementById('txt-pos').innerText = `LAT: ${userLat.toFixed(2)} | LON: ${userLon.toFixed(2)}`;
-document.getElementById('txt-squawk').innerText = "ICAO Hex: --";
-}
-function calculateDistanceKm(lat1, lon1, lat2, lon2) {
-const R = 6371;
-const dLat = (lat2 - lat1) * Math.PI / 180;
-const dLon = (lon2 - lon1) * Math.PI / 180;
-const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-Math.sin(dLon/2) * Math.sin(dLon/2);
-const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-return R * c;
-}
-function toggleMute() {
-audioMuted = !audioMuted;
-document.getElementById('btn-audio-toggle').innerText = audioMuted ? "CHIME: OFF" : "CHIME: ON";
-}
-function playAirportChime() {
-if (audioMuted || !audioCtx) return;
-try {
-const now = audioCtx.currentTime;
-const osc1 = audioCtx.createOscillator(), gain1 = audioCtx.createGain();
-osc1.type = 'sine'; osc1.frequency.setValueAtTime(698.46, now);
-gain1.gain.setValueAtTime(0.3, now); gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.8
+    let audioCtx = null;
+    let audioMuted = false;
+    let currentRadiusKm = 50; // Default expanded radius
+    let maxAltFeet = 45000;
+    let userLat = -33.8200; // Default Cape Town fallback
+    let userLon = 18.4900;
+    let lastOverheadIcao = "";
+
+    function enableAudioAndStart() {
+        try {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (AudioContextClass) audioCtx = new AudioContextClass();
+        } catch(e) {}
+        document.getElementById('audio-overlay').style.display = 'none';
+        
+        getUserLocation();
+        setInterval(fetchLiveFlights, 15000);
+    }
+
+    function getUserLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function(pos) {
+                    userLat = pos.coords.latitude;
+                    userLon = pos.coords.longitude;
+                    document.getElementById('gps-status').innerText = "● GPS LOCKED";
+                    fetchLiveFlights();
+                },
+                function(err) {
+                    document.getElementById('gps-status').innerText = "● DEFAULT GPS";
+                    fetchLiveFlights();
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        } else {
+            document.getElementById('gps-status').innerText = "● DEFAULT GPS";
+            fetchLiveFlights();
+        }
+    }
+
+    function fetchLiveFlights() {
+        // Expand bounding box slightly more to catch approaching aircraft reliably
+        const deltaDeg = (currentRadiusKm / 111.0) * 1.5;
+        const lamin = userLat - deltaDeg;
+        const lamax = userLat + deltaDeg;
+        const lomin = userLon - deltaDeg;
+        const lomax = userLon + deltaDeg;
+
+        const url = `https://opensky-network.org/api/states/all?lamin=${lamin.toFixed(4)}&lomin=${lomin.toFixed(4)}&lamax=${lamax.toFixed(4)}&lomax=${lomax.toFixed(4)}`;
+
+        fetch(url, { headers: { 'Accept': 'application/json' } })
+            .then(res => {
+                if (!res.ok) throw new Error('API Rate Limited');
+                return res.json();
+            })
+            .then(data => {
+                if (data && data.states) {
+                    processFlightData(data.states);
+                } else {
+                    displayNoTarget("No ADS-B Feed");
+                }
+            })
+            .catch(err => {
+                displayNoTarget("API Rate Limited");
+            });
+    }
+
+    function processFlightData(states) {
+        if (!states || states.length === 0) {
+            displayNoTarget("Airspace clear");
+            lastOverheadIcao = "";
+            return;
+        }
+
+        let closestPlane = null;
+        let minDistance = 999999;
+
+        for (let i = 0; i < states.length; i++) {
+            const s = states[i];
+            const icao = s[0];
+            const callsign = (s[1] || "UNKNOWN").trim();
+            const lon = s[5];
+            const lat = s[6];
+            const altMeters = s[7] || s[13] || 0;
+            const velocityMs = s[9] || 0;
+            
+            const altFeet = Math.round(altMeters * 3.28084);
+            if (altFeet > maxAltFeet) continue;
+
+            const dist = calculateDistanceKm(userLat, userLon, lat, lon);
+            if (dist <= currentRadiusKm && dist < minDistance) {
+                minDistance = dist;
+                closestPlane = {
+                    icao: icao,
+                    callsign: callsign,
+                    altFeet: altFeet,
+                    speedKts: Math.round(velocityMs * 1.94384),
+                    distKm: dist.toFixed(1),
+                    lat: lat.toFixed(4),
+                    lon: lon.toFixed(4)
+                };
+            }
+        }
+
+        if (closestPlane) {
+            document.getElementById('txt-callsign').innerText = closestPlane.callsign !== "" ? closestPlane.callsign : "FLIGHT";
+            document.getElementById('txt-icaocode').innerText = closestPlane.callsign !== "" ? closestPlane.callsign.substring(0,2) : "ICAO";
+            document.getElementById('txt-airline').innerText = "Live Overhead Target Identified";
+            document.getElementById('txt-distance').innerText = closestPlane.distKm + " km";
+            document.getElementById('txt-status').innerText = "Directly Overhead";
+            document.getElementById('txt-altitude').innerText = closestPlane.altFeet.toLocaleString() + " ft";
+            document.getElementById('txt-speed').innerText = "Ground Speed: " + closestPlane.speedKts + " kts";
+            document.getElementById('txt-pos').innerText = `LAT: ${closestPlane.lat} | LON: ${closestPlane.lon}`;
+            document.getElementById('txt-squawk').innerText = "ICAO Hex: " + closestPlane.icao.toUpperCase();
+            
+            if (lastOverheadIcao !== closestPlane.icao) {
+                playAirportChime();
+                lastOverheadIcao = closestPlane.icao;
+            }
+        } else {
+            displayNoTarget("Airspace clear");
+            lastOverheadIcao = "";
+        }
+    }
+
+    function displayNoTarget(statusText) {
+        document.getElementById('txt-callsign').innerText = "STANDBY";
+        document.getElementById('txt-icaocode').innerText = "--";
+        document.getElementById('txt-airline').innerText = "Scanning local overhead frequencies";
+        document.getElementById('txt-distance').innerText = "-- km";
+        document.getElementById('txt-status').innerText = statusText;
+        document.getElementById('txt-altitude').innerText = "0 ft";
+        document.getElementById('txt-speed').innerText = "Ground Speed: 0 kts";
+        document.getElementById('txt-pos').innerText = `LAT: ${userLat.toFixed(2)} | LON: ${userLon.toFixed(2)}`;
+        document.getElementById('txt-squawk').innerText = "ICAO Hex: --";
+    }
+
+    function calculateDistanceKm(lat1, lon1, lat2, lon2) {
+        const R = 6371;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
+    }
+
+    function toggleMute() {
+        audioMuted = !audioMuted;
+        document.getElementById('btn-audio-toggle').innerText = audioMuted ? "CHIME: OFF" : "CHIME: ON";
+    }
+
+    function playAirportChime() {
+        if (audioMuted || !audioCtx) return;
+        try {
+            const now = audioCtx.currentTime;
+            const osc1 = audioCtx.createOscillator(), gain1 = audioCtx.createGain();
+            osc1.type = 'sine'; osc1.frequency.setValueAtTime(698.46, now);
+            gain1.gain.setValueAtTime(0.3, now); gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+            osc1.connect(gain1); gain1.connect(audioCtx.destination);
+            osc1.start(now); osc1.stop(now + 0.8);
+
+            const osc2 = audioCtx.createOscillator(), gain2 = audioCtx.createGain();
+            osc2.type = 'sine'; osc2.frequency.setValueAtTime(523.25, now + 0.4);
+            gain2.gain.setValueAtTime(0.3, now + 0.4); gain2.gain.exponentialRampToValueAtTime(0.001, now + 1.4);
+            osc2.connect(gain2); gain2.connect(audioCtx.destination);
+            osc2.start(now + 0.4); osc2.stop(now + 1.4);
+        } catch(e) {}
+    }
+
+    function openSettings() { document.getElementById('settings-overlay').style.display = 'flex'; }
+    function closeSettings() { document.getElementById('settings-overlay').style.display = 'none'; fetchLiveFlights(); }
+
+    function adjustRadius(delta) {
+        currentRadiusKm += delta;
+        if (currentRadiusKm < 5) currentRadiusKm = 5;
+        if (currentRadiusKm > 150) currentRadiusKm = 150;
+        document.getElementById('val-radius').innerText = currentRadiusKm + ' km';
+    }
+
+    function adjustAlt(delta) {
+        maxAltFeet += delta;
+        if (maxAltFeet < 10000) maxAltFeet = 10000;
+        if (maxAltFeet > 50000) maxAltFeet = 50000;
+        document.getElementById('val-alt').innerText = maxAltFeet + ' ft';
+    }
+</script>
+</body>
+</html>
