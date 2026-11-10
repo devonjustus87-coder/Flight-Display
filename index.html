@@ -46,35 +46,35 @@
     <div class="fr24-card">
         <div class="card-header">
             <div class="flight-badges">
-                <span id="txt-callsign" class="badge-callsign">SFR841</span>
-                <span id="txt-icaocode" class="badge-code">FA841</span>
-                <span id="txt-typecode" class="badge-type">B738</span>
+                <span id="txt-callsign" class="badge-callsign">STANDBY</span>
+                <span id="txt-icaocode" class="badge-code">--</span>
+                <span id="txt-typecode" class="badge-type">ADS-B</span>
             </div>
         </div>
-        <div id="txt-airline" class="airline-name" style="padding-top:8px;">FlySafair</div>
+        <div id="txt-airline" class="airline-name" style="padding-top:8px;">Scanning local airspace...</div>
 
         <div class="card-body">
             <div class="data-box">
                 <div class="label">Overhead Range</div>
-                <div id="txt-distance" class="value">2.4 km</div>
-                <div id="txt-status" class="sub-value" style="color: #4ade80;">Directly Overhead</div>
+                <div id="txt-distance" class="value">-- km</div>
+                <div id="txt-status" class="sub-value">Searching within radius</div>
             </div>
 
             <div class="data-box">
                 <div class="label">Barometric Alt.</div>
-                <div id="txt-altitude" class="value">3,420 ft</div>
-                <div id="txt-speed" class="sub-value">Ground Speed: 245 kts</div>
+                <div id="txt-altitude" class="value">0 ft</div>
+                <div id="txt-speed" class="sub-value">Ground Speed: 0 kts</div>
             </div>
 
             <div class="data-box full-width">
                 <div class="label">Position & GPS Coordinates</div>
-                <div id="txt-pos" class="value" style="font-size: 16px; font-family: monospace;">LAT: -33.82 | LON: 18.49</div>
-                <div id="txt-squawk" class="sub-value" style="margin-top: 4px;">REG: ZS-SJT (FAIM / CPT)</div>
+                <div id="txt-pos" class="value" style="font-size: 16px; font-family: monospace;">LAT: -- | LON: --</div>
+                <div id="txt-squawk" class="sub-value" style="margin-top: 4px;">ICAO Hex: --</div>
             </div>
         </div>
 
         <div class="utility-bar">
-            <span id="gps-status" style="color: #4ade80; font-weight: 600;">● LIVE FEED ACTIVE</span>
+            <span id="gps-status" style="color: #4ade80; font-weight: 600;">● GPS ACTIVE</span>
             <div>
                 <button class="util-btn" id="btn-audio-toggle" onclick="toggleMute()">CHIME: ON</button>
                 <button class="util-btn" onclick="openSettings()">⚙ SETTINGS</button>
@@ -85,7 +85,7 @@
 
 <div id="audio-overlay" class="overlay-screen" style="display:flex;">
     <h2 style="color: #ff9900; margin-bottom: 12px; font-size: 24px;">FLIGHTRADAR24 DISPLAY</h2>
-    <p style="color: #a1a1aa; font-size: 14px; margin-bottom: 20px; line-height: 1.5;">Tap below to initialize your dashboard and audio alerts.</p>
+    <p style="color: #a1a1aa; font-size: 14px; margin-bottom: 20px; line-height: 1.5;">Tap below to lock GPS location and start tracking.</p>
     <button class="btn-action" onclick="enableAudioAndStart()">LAUNCH RADAR</button>
 </div>
 
@@ -96,14 +96,18 @@
         <span>AIRSPACE RADIUS:</span>
         <div>
             <button class="btn-adj" onclick="adjustRadius(-5)">-</button>
-            <span id="val-radius" style="margin: 0 12px; font-weight:bold; color:#ff9900;">50 km</span>
+            <span id="val-radius" style="margin: 0 12px; font-weight:bold; color:#ff9900;">25 km</span>
             <button class="btn-adj" onclick="adjustRadius(5)">+</button>
         </div>
     </div>
 
     <div class="settings-row">
-        <span>MODE:</span>
-        <div style="font-weight:bold; color:#4ade80;" id="mode-indicator">LIVE / ROTATING</div>
+        <span>MAX ALTITUDE:</span>
+        <div>
+            <button class="btn-adj" onclick="adjustAlt(-5000)">-</button>
+            <span id="val-alt" style="margin: 0 12px; font-weight:bold; color:#ff9900;">45000 ft</span>
+            <button class="btn-adj" onclick="adjustAlt(5000)">+</button>
+        </div>
     </div>
 
     <button class="btn-action" style="background:#38bdf8; color:#000; width:100%; max-width:360px;" onclick="closeSettings()">SAVE & EXIT</button>
@@ -112,17 +116,11 @@
 <script>
     let audioCtx = null;
     let audioMuted = false;
-    let currentRadiusKm = 50;
-    let flightIndex = 0;
-
-    // Realistic Cape Town corridor flights queue so the dashboard always mirrors live local traffic
-    const simulatedFlights = [
-        { callsign: "SFR841", icao: "FA841", type: "B738", airline: "FlySafair", alt: "3,420 ft", speed: "245 kts", dist: "2.4 km", reg: "ZS-SJT", route: "JNB ➔ CPT" },
-        { callsign: "BAW059", icao: "BA59", type: "A388", airline: "British Airways", alt: "12,100 ft", speed: "380 kts", dist: "14.2 km", reg: "G-XLEB", route: "LHR ➔ CPT" },
-        { callsign: "SAA323", icao: "SA323", type: "A320", airline: "South African Airways", alt: "6,800 ft", speed: "290 kts", dist: "8.1 km", reg: "ZS-SZD", route: "JNB ➔ CPT" },
-        { callsign: "LFT832", icao: "FN832", type: "AT76", airline: "Safair / Lift", alt: "1,850 ft", speed: "180 kts", dist: "4.5 km", reg: "ZS-VRH", route: "GRJ ➔ CPT" },
-        { callsign: "MOV112", icao: "MV112", type: "B733", airline: "Momentum Air", alt: "9,400 ft", speed: "310 kts", dist: "11.0 km", reg: "ZS-OAK", route: "HLA ➔ CPT" }
-    ];
+    let currentRadiusKm = 25; // Strict default radius
+    let maxAltFeet = 45000;
+    let userLat = -33.8200; // Default Cape Town fallback
+    let userLon = 18.4900;
+    let lastOverheadIcao = "";
 
     function enableAudioAndStart() {
         try {
@@ -130,28 +128,141 @@
             if (AudioContextClass) audioCtx = new AudioContextClass();
         } catch(e) {}
         document.getElementById('audio-overlay').style.display = 'none';
-        playAirportChime();
-        startRotation();
+        
+        getUserLocation();
+        setInterval(fetchLiveFlights, 15000);
     }
 
-    function startRotation() {
-        setInterval(() => {
-            flightIndex = (flightIndex + 1) % simulatedFlights.length;
-            updateCard(simulatedFlights[flightIndex]);
-            playAirportChime();
-        }, 10000); // Rotates through live overhead targets every 10 seconds
+    function getUserLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function(pos) {
+                    userLat = pos.coords.latitude;
+                    userLon = pos.coords.longitude;
+                    document.getElementById('gps-status').innerText = "● GPS LOCKED";
+                    fetchLiveFlights();
+                },
+                function(err) {
+                    document.getElementById('gps-status').innerText = "● DEFAULT GPS";
+                    fetchLiveFlights();
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        } else {
+            document.getElementById('gps-status').innerText = "● DEFAULT GPS";
+            fetchLiveFlights();
+        }
     }
 
-    function updateCard(f) {
-        document.getElementById('txt-callsign').innerText = f.callsign;
-        document.getElementById('txt-icaocode').innerText = f.icao;
-        document.getElementById('txt-typecode').innerText = f.type;
-        document.getElementById('txt-airline').innerText = f.airline + " (" + f.route + ")";
-        document.getElementById('txt-distance').innerText = f.dist;
-        document.getElementById('txt-altitude').innerText = f.alt;
-        document.getElementById('txt-speed').innerText = "Ground Speed: " + f.speed;
-        document.getElementById('txt-pos').innerText = "LAT: -33.82 | LON: 18.49";
-        document.getElementById('txt-squawk').innerText = "REG: " + f.reg + " (Table View Corridor)";
+    function fetchLiveFlights() {
+        // Tight bounding box matching your exact radius setting
+        const deltaDeg = currentRadiusKm / 111.0;
+        const lamin = userLat - deltaDeg;
+        const lamax = userLat + deltaDeg;
+        const lomin = userLon - deltaDeg;
+        const lomax = userLon + deltaDeg;
+
+        const targetUrl = `https://opensky-network.org/api/states/all?lamin=${lamin.toFixed(4)}&lomin=${lomin.toFixed(4)}&lamax=${lamax.toFixed(4)}&lomax=${lomax.toFixed(4)}`;
+        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+
+        fetch(proxyUrl)
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.states) {
+                    processFlightData(data.states);
+                } else {
+                    displayNoTarget("Airspace clear");
+                }
+            })
+            .catch(err => {
+                displayNoTarget("Connecting...");
+            });
+    }
+
+    function processFlightData(states) {
+        if (!states || states.length === 0) {
+            displayNoTarget("Airspace clear");
+            lastOverheadIcao = "";
+            return;
+        }
+
+        let closestPlane = null;
+        let minDistance = 999999;
+
+        for (let i = 0; i < states.length; i++) {
+            const s = states[i];
+            const icao = s[0];
+            const callsign = (s[1] || "UNKNOWN").trim();
+            const lon = s[5];
+            const lat = s[6];
+            const altMeters = s[7] || s[13] || 0;
+            const velocityMs = s[9] || 0;
+            
+            if (lat === null || lon === null) continue;
+
+            const altFeet = Math.round(altMeters * 3.28084);
+            if (altFeet > maxAltFeet) continue;
+
+            // Strict mathematical distance calculation from your exact GPS coordinates
+            const dist = calculateDistanceKm(userLat, userLon, lat, lon);
+            
+            // Only consider planes within your configured radius slider
+            if (dist <= currentRadiusKm && dist < minDistance) {
+                minDistance = dist;
+                closestPlane = {
+                    icao: icao,
+                    callsign: callsign,
+                    altFeet: altFeet,
+                    speedKts: Math.round(velocityMs * 1.94384),
+                    distKm: dist.toFixed(1),
+                    lat: lat.toFixed(4),
+                    lon: lon.toFixed(4)
+                };
+            }
+        }
+
+        if (closestPlane) {
+            document.getElementById('txt-callsign').innerText = closestPlane.callsign !== "" ? closestPlane.callsign : "FLIGHT";
+            document.getElementById('txt-icaocode').innerText = closestPlane.callsign !== "" ? closestPlane.callsign.substring(0,2) : "ICAO";
+            document.getElementById('txt-airline').innerText = "Within " + currentRadiusKm + "km Radius";
+            document.getElementById('txt-distance').innerText = closestPlane.distKm + " km";
+            document.getElementById('txt-status').innerText = "Directly Overhead";
+            document.getElementById('txt-altitude').innerText = closestPlane.altFeet.toLocaleString() + " ft";
+            document.getElementById('txt-speed').innerText = "Ground Speed: " + closestPlane.speedKts + " kts";
+            document.getElementById('txt-pos').innerText = `LAT: ${closestPlane.lat} | LON: ${closestPlane.lon}`;
+            document.getElementById('txt-squawk').innerText = "ICAO Hex: " + closestPlane.icao.toUpperCase();
+            
+            if (lastOverheadIcao !== closestPlane.icao) {
+                playAirportChime();
+                lastOverheadIcao = closestPlane.icao;
+            }
+        } else {
+            displayNoTarget("No targets in " + currentRadiusKm + "km");
+            lastOverheadIcao = "";
+        }
+    }
+
+    function displayNoTarget(statusText) {
+        document.getElementById('txt-callsign').innerText = "STANDBY";
+        document.getElementById('txt-icaocode').innerText = "--";
+        document.getElementById('txt-airline').innerText = "Airspace within " + currentRadiusKm + "km";
+        document.getElementById('txt-distance').innerText = "-- km";
+        document.getElementById('txt-status').innerText = statusText;
+        document.getElementById('txt-altitude').innerText = "0 ft";
+        document.getElementById('txt-speed').innerText = "Ground Speed: 0 kts";
+        document.getElementById('txt-pos').innerText = `LAT: ${userLat.toFixed(2)} | LON: ${userLon.toFixed(2)}`;
+        document.getElementById('txt-squawk').innerText = "ICAO Hex: --";
+    }
+
+    function calculateDistanceKm(lat1, lon1, lat2, lon2) {
+        const R = 6371;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
     }
 
     function toggleMute() {
@@ -178,13 +289,20 @@
     }
 
     function openSettings() { document.getElementById('settings-overlay').style.display = 'flex'; }
-    function closeSettings() { document.getElementById('settings-overlay').style.display = 'none'; }
+    function closeSettings() { document.getElementById('settings-overlay').style.display = 'none'; fetchLiveFlights(); }
 
     function adjustRadius(delta) {
         currentRadiusKm += delta;
         if (currentRadiusKm < 5) currentRadiusKm = 5;
-        if (currentRadiusKm > 150) currentRadiusKm = 150;
+        if (currentRadiusKm > 100) currentRadiusKm = 100;
         document.getElementById('val-radius').innerText = currentRadiusKm + ' km';
+    }
+
+    function adjustAlt(delta) {
+        maxAltFeet += delta;
+        if (maxAltFeet < 10000) maxAltFeet = 10000;
+        if (maxAltFeet > 50000) maxAltFeet = 50000;
+        document.getElementById('val-alt').innerText = maxAltFeet + ' ft';
     }
 </script>
 </body>
