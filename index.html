@@ -97,7 +97,7 @@
 <!-- Start Audio Overlay -->
 <div id="audio-overlay" class="overlay-screen" style="display:flex;">
     <h2 style="color: #ff9900; margin-bottom: 12px; font-size: 24px;">FLIGHTRADAR24 DISPLAY</h2>
-    <p style="color: #a1a1aa; font-size: 14px; margin-bottom: 20px; line-height: 1.5;">Tap below to initialize GPS location access, live OpenSky feeds, and audio alerts.</p>
+    <p style="color: #a1a1aa; font-size: 14px; margin-bottom: 20px; line-height: 1.5;">Tap below to initialize GPS location access, live feeds, and audio alerts.</p>
     <button class="btn-action" onclick="enableAudioAndStart()">LAUNCH RADAR</button>
 </div>
 
@@ -109,7 +109,7 @@
         <span>AIRSPACE RADIUS:</span>
         <div>
             <button class="btn-adj" onclick="adjustRadius(-5)">-</button>
-            <span id="val-radius" style="margin: 0 12px; font-weight:bold; color:#ff9900;">50 km</span>
+            <span id="val-radius" style="margin: 0 12px; font-weight:bold; color:#ff9900;">75 km</span>
             <button class="btn-adj" onclick="adjustRadius(5)">+</button>
         </div>
     </div>
@@ -129,7 +129,7 @@
 <script>
     let audioCtx = null;
     let audioMuted = false;
-    let currentRadiusKm = 50; // Default expanded radius
+    let currentRadiusKm = 75; // Default larger buffer
     let maxAltFeet = 45000;
     let userLat = -33.8200; // Default Cape Town fallback
     let userLon = 18.4900;
@@ -143,7 +143,7 @@
         document.getElementById('audio-overlay').style.display = 'none';
         
         getUserLocation();
-        setInterval(fetchLiveFlights, 15000);
+        setInterval(fetchLiveFlights, 12000);
     }
 
     function getUserLocation() {
@@ -168,29 +168,31 @@
     }
 
     function fetchLiveFlights() {
-        // Expand bounding box slightly more to catch approaching aircraft reliably
         const deltaDeg = (currentRadiusKm / 111.0) * 1.5;
         const lamin = userLat - deltaDeg;
         const lamax = userLat + deltaDeg;
         const lomin = userLon - deltaDeg;
         const lomax = userLon + deltaDeg;
 
-        const url = `https://opensky-network.org/api/states/all?lamin=${lamin.toFixed(4)}&lomin=${lomin.toFixed(4)}&lamax=${lamax.toFixed(4)}&lomax=${lomax.toFixed(4)}`;
+        const targetUrl = `https://opensky-network.org/api/states/all?lamin=${lamin.toFixed(4)}&lomin=${lomin.toFixed(4)}&lamax=${lamax.toFixed(4)}&lomax=${lomax.toFixed(4)}`;
+        
+        // Wrapped through a public CORS proxy to bypass browser security blocks
+        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
 
-        fetch(url, { headers: { 'Accept': 'application/json' } })
+        fetch(proxyUrl)
             .then(res => {
-                if (!res.ok) throw new Error('API Rate Limited');
+                if (!res.ok) throw new Error('Network response failed');
                 return res.json();
             })
             .then(data => {
                 if (data && data.states) {
                     processFlightData(data.states);
                 } else {
-                    displayNoTarget("No ADS-B Feed");
+                    displayNoTarget("Scanning airspace");
                 }
             })
             .catch(err => {
-                displayNoTarget("API Rate Limited");
+                displayNoTarget("Connecting...");
             });
     }
 
@@ -213,6 +215,8 @@
             const altMeters = s[7] || s[13] || 0;
             const velocityMs = s[9] || 0;
             
+            if (lat === null || lon === null) continue;
+
             const altFeet = Math.round(altMeters * 3.28084);
             if (altFeet > maxAltFeet) continue;
 
@@ -304,7 +308,7 @@
     function adjustRadius(delta) {
         currentRadiusKm += delta;
         if (currentRadiusKm < 5) currentRadiusKm = 5;
-        if (currentRadiusKm > 150) currentRadiusKm = 150;
+        if (currentRadiusKm > 200) currentRadiusKm = 200;
         document.getElementById('val-radius').innerText = currentRadiusKm + ' km';
     }
 
