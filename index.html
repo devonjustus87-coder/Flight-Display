@@ -113,7 +113,7 @@
             <div class="header-left">
                 <div class="flight-badges">
                     <span id="txt-callsign" class="badge-callsign">LIVE</span>
-                    <span id="txt-reg-badge" class="badge-code">CORS</span>
+                    <span id="txt-reg-badge" class="badge-code">DIRECT</span>
                     <span id="txt-typecode" class="badge-type">ADS-B</span>
                 </div>
                 <div id="txt-airline" class="airline-title">Connecting to live airspace...</div>
@@ -284,21 +284,32 @@
             const latStr = userLat.toFixed(4);
             const lonStr = userLon.toFixed(4);
             
-            // Route through public CORS proxy so mobile browser doesn't block the json response
-            const targetUrl = `https://api.adsb.lol/v2/lat/${latStr}/lon/${lonStr}/dist/${queryNm}`;
-            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+            // Multi-endpoint strategy using direct airplanes.live endpoint and corsproxy fallback
+            const urls = [
+                `https://api.airplanes.live/v2/point/${latStr}/${lonStr}/${queryNm}`,
+                `https://corsproxy.io/?` + encodeURIComponent(`https://api.adsb.lol/v2/lat/${latStr}/lon/${lonStr}/dist/${queryNm}`)
+            ];
 
-            const res = await fetch(proxyUrl);
-            if (!res.ok) throw new Error("Network response failed");
-            const data = await res.json();
+            let data = null;
+            for (let url of urls) {
+                try {
+                    const res = await fetch(url);
+                    if (res.ok) {
+                        data = await res.json();
+                        if (data && (Array.isArray(data.ac) || Array.isArray(data.aircraft))) break;
+                    }
+                } catch(e) {}
+            }
 
-            if (data && Array.isArray(data.ac)) {
+            const aircraftList = data ? (data.ac || data.aircraft) : null;
+
+            if (Array.isArray(aircraftList)) {
                 document.getElementById('status-dot').style.backgroundColor = "#4ade80";
                 document.getElementById('status-dot').style.boxShadow = "0 0 8px #4ade80";
-                document.getElementById('txt-mode-tag').innerText = `LIVE (${data.ac.length} NEAR)`;
-                processPlanes(data.ac);
+                document.getElementById('txt-mode-tag').innerText = `LIVE (${aircraftList.length} NEAR)`;
+                processPlanes(aircraftList);
             } else {
-                throw new Error("Invalid data format");
+                throw new Error("No data returned");
             }
         } catch (err) {
             document.getElementById('status-dot').style.backgroundColor = "#ef4444";
