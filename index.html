@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>FlightWall Live</title>
+    <title>FlightWall Direct</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { 
@@ -22,26 +20,19 @@
         }
         .container { width: 100%; max-width: 480px; }
         .fw-card { 
-            background-color: #18181c; 
-            border-radius: 14px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8); 
-            overflow: hidden; 
-            border: 1px solid #2d2d35; 
+            background-color: #18181c; border-radius: 14px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8); overflow: hidden; border: 1px solid #2d2d35; 
         }
         .card-header { 
-            background-color: #121215; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: stretch; 
-            border-bottom: 1px solid #2d2d35; 
-            min-height: 96px;
+            background-color: #121215; display: flex; justify-content: space-between; 
+            align-items: stretch; border-bottom: 1px solid #2d2d35; min-height: 96px;
         }
         .header-left { padding: 14px 16px; display: flex; flex-direction: column; justify-content: center; flex: 1; }
         .flight-badges { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
         .badge-callsign { background-color: #ff9900; color: #000; font-weight: 800; font-size: 17px; padding: 3px 8px; border-radius: 5px; }
         .badge-code { background-color: #3f3f46; color: #fff; font-size: 12px; padding: 4px 7px; border-radius: 5px; font-weight: 600; }
         .badge-type { background-color: #0284c7; color: #fff; font-size: 12px; padding: 4px 7px; border-radius: 5px; font-weight: 600; }
-        .airline-title { font-size: 14px; color: #e4e4e7; margin-top: 8px; font-weight: 600; }
+        .airline-title { font-size: 13px; color: #e4e4e7; margin-top: 8px; font-weight: 600; word-break: break-all; }
 
         .photo-box {
             width: 155px; position: relative; background-color: #1f1f26;
@@ -112,11 +103,11 @@
         <div class="card-header">
             <div class="header-left">
                 <div class="flight-badges">
-                    <span id="txt-callsign" class="badge-callsign">LIVE</span>
-                    <span id="txt-reg-badge" class="badge-code">DIRECT</span>
-                    <span id="txt-typecode" class="badge-type">ADS-B</span>
+                    <span id="txt-callsign" class="badge-callsign">DIRECT</span>
+                    <span id="txt-reg-badge" class="badge-code">API</span>
+                    <span id="txt-typecode" class="badge-type">V3</span>
                 </div>
-                <div id="txt-airline" class="airline-title">Connecting to live airspace...</div>
+                <div id="txt-airline" class="airline-title">Initializing direct connection...</div>
             </div>
             <div class="photo-box">
                 <span class="photo-placeholder" id="photo-placeholder">✈</span>
@@ -133,7 +124,7 @@
                     <span class="plane-icon">✈</span>
                     <span id="txt-heading" class="airport-code">---°</span>
                 </div>
-                <div id="txt-route-name" class="sub-value">Filtering strict radius</div>
+                <div id="txt-route-name" class="sub-value">Strict radius filter active</div>
             </div>
 
             <div class="data-box">
@@ -150,7 +141,7 @@
 
             <div class="data-box full-width">
                 <div class="label">Aircraft & Telemetry</div>
-                <div id="txt-model" class="value" style="font-size: 16px;">Waiting for packet...</div>
+                <div id="txt-model" class="value" style="font-size: 15px;">Awaiting response...</div>
                 <div id="txt-coords" class="sub-value" style="color: #ff9900; font-weight: 700; margin-top: 4px; font-family: monospace;">LAT: -- | LON: --</div>
             </div>
         </div>
@@ -200,7 +191,7 @@
     let audioCtx = null;
     let audioMuted = false;
     let currentRadiusKm = parseInt(localStorage.getItem('fw_radius')) || 10;
-    let userLat = parseFloat(localStorage.getItem('fw_lat')) || -33.8200; // Default Table View area
+    let userLat = parseFloat(localStorage.getItem('fw_lat')) || -33.8200;
     let userLon = parseFloat(localStorage.getItem('fw_lon')) || 18.4900;
     let lastOverheadHex = "";
     let photoCache = {};
@@ -284,37 +275,29 @@
             const latStr = userLat.toFixed(4);
             const lonStr = userLon.toFixed(4);
             
-            // Multi-endpoint strategy using direct airplanes.live endpoint and corsproxy fallback
-            const urls = [
-                `https://api.airplanes.live/v2/point/${latStr}/${lonStr}/${queryNm}`,
-                `https://corsproxy.io/?` + encodeURIComponent(`https://api.adsb.lol/v2/lat/${latStr}/lon/${lonStr}/dist/${queryNm}`)
-            ];
+            // Direct request to airplanes.live (supports CORS natively)
+            const url = `https://api.airplanes.live/v2/point/${latStr}/${lonStr}/${queryNm}`;
 
-            let data = null;
-            for (let url of urls) {
-                try {
-                    const res = await fetch(url);
-                    if (res.ok) {
-                        data = await res.json();
-                        if (data && (Array.isArray(data.ac) || Array.isArray(data.aircraft))) break;
-                    }
-                } catch(e) {}
-            }
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
+            const data = await res.json();
 
             const aircraftList = data ? (data.ac || data.aircraft) : null;
 
             if (Array.isArray(aircraftList)) {
                 document.getElementById('status-dot').style.backgroundColor = "#4ade80";
                 document.getElementById('status-dot').style.boxShadow = "0 0 8px #4ade80";
-                document.getElementById('txt-mode-tag').innerText = `LIVE (${aircraftList.length} NEAR)`;
+                document.getElementById('txt-mode-tag').innerText = `LIVE (${aircraftList.length} IN AREA)`;
                 processPlanes(aircraftList);
             } else {
-                throw new Error("No data returned");
+                throw new Error("Invalid JSON structure from server");
             }
         } catch (err) {
             document.getElementById('status-dot').style.backgroundColor = "#ef4444";
             document.getElementById('status-dot').style.boxShadow = "0 0 8px #ef4444";
-            document.getElementById('txt-mode-tag').innerText = "RECONNECTING...";
+            document.getElementById('txt-mode-tag').innerText = "CONNECTION FAILED";
+            document.getElementById('txt-airline').innerText = "Error: " + err.message;
+            document.getElementById('txt-model').innerText = "Check network connection";
         }
     }
 
