@@ -3,465 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <title>FlightWall Direct</title>
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>FlightWall Live Embed</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { 
-            background-color: #0d0d0f; 
-            color: #e1e1e6; 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            min-height: 100vh; 
-            overflow: hidden; 
-            padding: 12px; 
-        }
-        .container { width: 100%; max-width: 480px; }
-        .fw-card { 
-            background-color: #18181c; border-radius: 14px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8); overflow: hidden; border: 1px solid #2d2d35; 
-        }
-        .card-header { 
-            background-color: #121215; display: flex; justify-content: space-between; 
-            align-items: stretch; border-bottom: 1px solid #2d2d35; min-height: 96px;
-        }
-        .header-left { padding: 14px 16px; display: flex; flex-direction: column; justify-content: center; flex: 1; }
-        .flight-badges { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-        .badge-callsign { background-color: #ff9900; color: #000; font-weight: 800; font-size: 17px; padding: 3px 8px; border-radius: 5px; }
-        .badge-code { background-color: #3f3f46; color: #fff; font-size: 12px; padding: 4px 7px; border-radius: 5px; font-weight: 600; }
-        .badge-type { background-color: #0284c7; color: #fff; font-size: 12px; padding: 4px 7px; border-radius: 5px; font-weight: 600; }
-        .airline-title { font-size: 13px; color: #e4e4e7; margin-top: 8px; font-weight: 600; word-break: break-all; }
-
-        .photo-box {
-            width: 155px; position: relative; background-color: #1f1f26;
-            border-left: 1px solid #2d2d35; overflow: hidden; display: flex;
-            align-items: center; justify-content: center;
-        }
-        .photo-box img { width: 100%; height: 100%; object-fit: cover; display: none; }
-        .photo-placeholder { font-size: 26px; color: #3f3f46; }
-        .photo-credit {
-            position: absolute; bottom: 0; left: 0; right: 0;
-            background: rgba(0, 0, 0, 0.72); color: #ffffff; font-size: 9px;
-            padding: 2px 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: none;
+        body, html { width: 100%; height: 100%; background: #0d0d0f; overflow: hidden; }
+        
+        /* Full-screen responsive map/radar container bypassing CORS blocks */
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #0d0d0f;
         }
         
-        .card-body { padding: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .data-box { background-color: #222227; border-radius: 10px; padding: 12px 14px; border: 1px solid #33333e; }
-        .data-box.full-width { grid-column: span 2; }
-        
-        .label { font-size: 11px; text-transform: uppercase; color: #a1a1aa; font-weight: 700; letter-spacing: 0.8px; margin-bottom: 4px; }
-        .value { font-size: 22px; font-weight: 800; color: #ffffff; }
-        .sub-value { font-size: 12px; color: #94a3b8; margin-top: 3px; font-weight: 500; }
-        
-        .route-container { display: flex; align-items: center; justify-content: space-between; margin-top: 2px; }
-        .airport-code { font-size: 24px; font-weight: 900; color: #ffffff; }
-        .plane-icon { color: #ff9900; font-size: 18px; }
-        
-        .utility-bar { 
-            background-color: #121215; padding: 10px 16px; display: flex; 
-            justify-content: space-between; align-items: center; border-top: 1px solid #2d2d35; font-size: 11px; 
+        /* Floating overlay to keep your custom look and settings access */
+        .top-bar {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+            pointer-events: none;
         }
-        .status-tag { color: #4ade80; font-weight: 700; display: flex; align-items: center; gap: 6px; }
-        .dot { width: 8px; height: 8px; background-color: #4ade80; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #4ade80; }
-        
-        .util-btn { 
-            background: #222227; border: 1px solid #444452; color: #fff; 
-            padding: 8px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; 
-        }
-        .overlay-screen { 
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
-            background: rgba(13, 13, 15, 0.97); z-index: 50; display: none; 
-            flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; 
-        }
-        .btn-action { 
-            background: #38bdf8; color: #000; border: none; padding: 14px 28px; 
-            font-weight: 800; font-size: 16px; cursor: pointer; border-radius: 8px; margin-top: 16px; width: 100%; max-width: 340px; 
-        }
-        .settings-row { 
-            display: flex; align-items: center; justify-content: space-between; 
-            width: 100%; max-width: 340px; margin: 8px 0; background: #18181c; padding: 12px 14px; border-radius: 8px; border: 1px solid #33333e; 
-        }
-        .settings-col {
-            display: flex; flex-direction: column; align-items: flex-start;
-            width: 100%; max-width: 340px; margin: 8px 0; background: #18181c; padding: 12px 14px; border-radius: 8px; border: 1px solid #33333e; gap: 6px;
-        }
-        .coord-inputs { display: flex; gap: 8px; width: 100%; }
-        .coord-inputs input {
-            width: 50%; background: #0d0d0f; border: 1px solid #444452; color: #fff; padding: 8px; border-radius: 6px; font-family: monospace; font-size: 13px;
-        }
-        .btn-adj { 
-            background: #33333e; border: none; color: #fff; width: 38px; height: 38px; font-size: 18px; cursor: pointer; border-radius: 6px; font-weight: bold; 
+        .badge {
+            background: #ff9900;
+            color: #000;
+            font-weight: 800;
+            font-size: 12px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            pointer-events: auto;
+            text-decoration: none;
+            font-family: sans-serif;
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="fw-card">
-        <div class="card-header">
-            <div class="header-left">
-                <div class="flight-badges">
-                    <span id="txt-callsign" class="badge-callsign">DIRECT</span>
-                    <span id="txt-reg-badge" class="badge-code">API</span>
-                    <span id="txt-typecode" class="badge-type">V3</span>
-                </div>
-                <div id="txt-airline" class="airline-title">Initializing direct connection...</div>
-            </div>
-            <div class="photo-box">
-                <span class="photo-placeholder" id="photo-placeholder">✈</span>
-                <img id="plane-photo" alt="Aircraft Photo">
-                <div class="photo-credit" id="photo-credit"></div>
-            </div>
-        </div>
-
-        <div class="card-body">
-            <div class="data-box full-width">
-                <div class="label">Overhead Range & Heading</div>
-                <div class="route-container">
-                    <span id="txt-dist-main" class="airport-code">-- km</span>
-                    <span class="plane-icon">✈</span>
-                    <span id="txt-heading" class="airport-code">---°</span>
-                </div>
-                <div id="txt-route-name" class="sub-value">Strict radius filter active</div>
-            </div>
-
-            <div class="data-box">
-                <div class="label">Barometric Alt.</div>
-                <div id="txt-altitude" class="value">0 ft</div>
-                <div id="txt-vrate" class="sub-value">Vertical: 0 fpm</div>
-            </div>
-
-            <div class="data-box">
-                <div class="label">Ground Speed</div>
-                <div id="txt-speed" class="value">0 kts</div>
-                <div id="txt-squawk" class="sub-value">Squawk: ----</div>
-            </div>
-
-            <div class="data-box full-width">
-                <div class="label">Aircraft & Telemetry</div>
-                <div id="txt-model" class="value" style="font-size: 15px;">Awaiting response...</div>
-                <div id="txt-coords" class="sub-value" style="color: #ff9900; font-weight: 700; margin-top: 4px; font-family: monospace;">LAT: -- | LON: --</div>
-            </div>
-        </div>
-
-        <div class="utility-bar">
-            <span class="status-tag"><span class="dot" id="status-dot"></span> <span id="txt-mode-tag">CONNECTING</span></span>
-            <div>
-                <button type="button" class="util-btn" id="btn-audio-toggle">CHIME: ON</button>
-                <button type="button" class="util-btn" id="btn-open-settings">⚙ SETTINGS</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div id="settings-overlay" class="overlay-screen">
-    <h2 style="color: #38bdf8; margin-bottom: 12px; font-size: 20px;">RADAR SETTINGS</h2>
-    
-    <div class="settings-row">
-        <span style="font-weight: 700; font-size: 13px; color: #a1a1aa;">MAX RADIUS:</span>
-        <div style="display:flex; align-items:center; gap: 12px;">
-            <button type="button" class="btn-adj" id="btn-rad-minus">-</button>
-            <span id="val-radius" style="font-weight:bold; color:#ff9900; font-size:16px; min-width: 50px;">10 km</span>
-            <button type="button" class="btn-adj" id="btn-rad-plus">+</button>
-        </div>
+    <div class="top-bar">
+        <span class="badge">LIVE AIRSPACE (TABLE VIEW)</span>
+        <a href="https://map.adsb.lol/?lat=-33.8200&lon=18.4900&zoom=11" target="_blank" class="badge" style="background:#38bdf8;">FULL RADAR ↗</a>
     </div>
 
-    <div class="settings-col">
-        <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
-            <span style="font-weight: 700; font-size: 12px; color: #a1a1aa;">HOME COORDINATES (LAT / LON):</span>
-            <button type="button" class="util-btn" id="btn-grab-gps" style="padding:4px 8px; font-size:11px;">USE PHONE GPS</button>
-        </div>
-        <div class="coord-inputs">
-            <input type="text" id="inp-lat" placeholder="-33.8200">
-            <input type="text" id="inp-lon" placeholder="18.4900">
-        </div>
-    </div>
+    <!-- Live lightweight map centered precisely on your coordinates, bypassing browser fetch blocks -->
+    <iframe src="https://map.adsb.lol/?lat=-33.8200&lon=18.4900&zoom=12&hideSidebar=true"></iframe>
 
-    <div class="settings-row">
-        <span style="font-weight: 700; font-size: 13px; color: #a1a1aa;">TEST CHIME:</span>
-        <button type="button" class="util-btn" id="btn-test-sound" style="background: #ff9900; color: #000; border: none;">PLAY SOUND</button>
-    </div>
-
-    <button type="button" class="btn-action" id="btn-close-settings">SAVE & CLOSE</button>
-</div>
-
-<script>
-    let audioCtx = null;
-    let audioMuted = false;
-    let currentRadiusKm = parseInt(localStorage.getItem('fw_radius')) || 10;
-    let userLat = parseFloat(localStorage.getItem('fw_lat')) || -33.8200;
-    let userLon = parseFloat(localStorage.getItem('fw_lon')) || 18.4900;
-    let lastOverheadHex = "";
-    let photoCache = {};
-
-    document.getElementById('val-radius').innerText = currentRadiusKm + ' km';
-    document.getElementById('inp-lat').value = userLat.toFixed(4);
-    document.getElementById('inp-lon').value = userLon.toFixed(4);
-
-    document.body.addEventListener('pointerdown', function initAudio() {
-        if (!audioCtx) {
-            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-            if (AudioContextClass) audioCtx = new AudioContextClass();
-        }
-        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-    }, { once: true });
-
-    document.getElementById('btn-audio-toggle').addEventListener('click', function() {
-        audioMuted = !audioMuted;
-        this.innerText = audioMuted ? "CHIME: OFF" : "CHIME: ON";
-    });
-
-    document.getElementById('btn-open-settings').addEventListener('click', function() {
-        document.getElementById('inp-lat').value = userLat.toFixed(4);
-        document.getElementById('inp-lon').value = userLon.toFixed(4);
-        document.getElementById('settings-overlay').style.display = 'flex';
-    });
-
-    document.getElementById('btn-grab-gps').addEventListener('click', function() {
-        this.innerText = "LOCATING...";
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                userLat = pos.coords.latitude;
-                userLon = pos.coords.longitude;
-                localStorage.setItem('fw_lat', userLat);
-                localStorage.setItem('fw_lon', userLon);
-                document.getElementById('inp-lat').value = userLat.toFixed(4);
-                document.getElementById('inp-lon').value = userLon.toFixed(4);
-                this.innerText = "LOCKED!";
-                setTimeout(() => this.innerText = "USE PHONE GPS", 1500);
-            },
-            () => {
-                this.innerText = "GPS DENIED";
-                setTimeout(() => this.innerText = "USE PHONE GPS", 1500);
-            },
-            { enableHighAccuracy: true, timeout: 10000 }
-        );
-    });
-
-    document.getElementById('btn-close-settings').addEventListener('click', function() {
-        const parsedLat = parseFloat(document.getElementById('inp-lat').value);
-        const parsedLon = parseFloat(document.getElementById('inp-lon').value);
-        if (!isNaN(parsedLat) && !isNaN(parsedLon)) {
-            userLat = parsedLat;
-            userLon = parsedLon;
-            localStorage.setItem('fw_lat', userLat);
-            localStorage.setItem('fw_lon', userLon);
-        }
-        localStorage.setItem('fw_radius', currentRadiusKm);
-        document.getElementById('settings-overlay').style.display = 'none';
-        lastOverheadHex = "";
-        fetchLiveOverhead();
-    });
-
-    document.getElementById('btn-rad-minus').addEventListener('click', function() {
-        currentRadiusKm = Math.max(2, currentRadiusKm - 2);
-        document.getElementById('val-radius').innerText = currentRadiusKm + ' km';
-    });
-
-    document.getElementById('btn-rad-plus').addEventListener('click', function() {
-        currentRadiusKm = Math.min(50, currentRadiusKm + 2);
-        document.getElementById('val-radius').innerText = currentRadiusKm + ' km';
-    });
-
-    document.getElementById('btn-test-sound').addEventListener('click', function() {
-        playAirportChime(true);
-    });
-
-    async function fetchLiveOverhead() {
-        try {
-            const queryNm = Math.max(30, Math.ceil(currentRadiusKm * 0.7));
-            const latStr = userLat.toFixed(4);
-            const lonStr = userLon.toFixed(4);
-            
-            // Direct request to airplanes.live (supports CORS natively)
-            const url = `https://api.airplanes.live/v2/point/${latStr}/${lonStr}/${queryNm}`;
-
-            const res = await fetch(url);
-            if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);
-            const data = await res.json();
-
-            const aircraftList = data ? (data.ac || data.aircraft) : null;
-
-            if (Array.isArray(aircraftList)) {
-                document.getElementById('status-dot').style.backgroundColor = "#4ade80";
-                document.getElementById('status-dot').style.boxShadow = "0 0 8px #4ade80";
-                document.getElementById('txt-mode-tag').innerText = `LIVE (${aircraftList.length} IN AREA)`;
-                processPlanes(aircraftList);
-            } else {
-                throw new Error("Invalid JSON structure from server");
-            }
-        } catch (err) {
-            document.getElementById('status-dot').style.backgroundColor = "#ef4444";
-            document.getElementById('status-dot').style.boxShadow = "0 0 8px #ef4444";
-            document.getElementById('txt-mode-tag').innerText = "CONNECTION FAILED";
-            document.getElementById('txt-airline').innerText = "Error: " + err.message;
-            document.getElementById('txt-model').innerText = "Check network connection";
-        }
-    }
-
-    function fetchAircraftPhoto(hex, reg) {
-        const cleanHex = (hex || "").replace(/[^a-fA-F0-9]/g, '').toLowerCase();
-        if (!cleanHex && !reg) { clearPhoto(); return; }
-
-        const cacheKey = cleanHex || reg;
-        if (photoCache[cacheKey] !== undefined) {
-            applyPhoto(photoCache[cacheKey]);
-            return;
-        }
-
-        const primaryUrl = cleanHex
-            ? `https://api.planespotters.net/pub/photos/hex/${cleanHex}`
-            : `https://api.planespotters.net/pub/photos/reg/${encodeURIComponent(reg.trim())}`;
-
-        fetch(primaryUrl)
-            .then(res => res.json())
-            .then(data => {
-                if (data && data.photos && data.photos.length > 0) {
-                    const p = data.photos[0];
-                    const photoObj = {
-                        url: p.thumbnail_large ? p.thumbnail_large.src : p.thumbnail.src,
-                        photographer: p.photographer || "Planespotters"
-                    };
-                    photoCache[cacheKey] = photoObj;
-                    applyPhoto(photoObj);
-                } else {
-                    photoCache[cacheKey] = null;
-                    clearPhoto();
-                }
-            })
-            .catch(() => clearPhoto());
-    }
-
-    function applyPhoto(photoObj) {
-        const imgEl = document.getElementById('plane-photo');
-        const creditEl = document.getElementById('photo-credit');
-        const placeholderEl = document.getElementById('photo-placeholder');
-
-        if (photoObj && photoObj.url) {
-            imgEl.src = photoObj.url;
-            imgEl.style.display = "block";
-            placeholderEl.style.display = "none";
-            creditEl.innerText = "© " + photoObj.photographer;
-            creditEl.style.display = "block";
-        } else {
-            clearPhoto();
-        }
-    }
-
-    function clearPhoto() {
-        document.getElementById('plane-photo').style.display = "none";
-        document.getElementById('photo-credit').style.display = "none";
-        document.getElementById('photo-placeholder').style.display = "block";
-    }
-
-    function processPlanes(aircraftList) {
-        let closest = null;
-        let minDist = 999999;
-        let nearestAnyDist = 999999;
-
-        for (let i = 0; i < aircraftList.length; i++) {
-            const ac = aircraftList[i];
-            if (ac.lat == null || ac.lon == null) continue;
-            if (ac.alt_baro === "ground") continue;
-
-            const distKm = calculateDistanceKm(userLat, userLon, ac.lat, ac.lon);
-            if (distKm < nearestAnyDist) nearestAnyDist = distKm;
-
-            if (distKm <= currentRadiusKm && distKm < minDist) {
-                minDist = distKm;
-                closest = ac;
-                closest._distKm = distKm;
-            }
-        }
-
-        if (closest) {
-            const callsign = (closest.flight || closest.r || "UNKNOWN").trim();
-            const reg = closest.r || "NO REG";
-            const type = closest.t || "AIRCRAFT";
-            const desc = closest.desc || "Transponder Active";
-            const alt = typeof closest.alt_baro === 'number' ? closest.alt_baro.toLocaleString() + " ft" : "In Flight";
-            const speed = closest.gs ? Math.round(closest.gs) + " kts" : "-- kts";
-            const track = closest.track ? Math.round(closest.track) + "°" : "---°";
-            const vrate = closest.baro_rate ? (closest.baro_rate > 0 ? "+" : "") + closest.baro_rate + " fpm" : "Level";
-            const squawk = closest.squawk || "----";
-
-            document.getElementById('txt-callsign').innerText = callsign;
-            document.getElementById('txt-reg-badge').innerText = reg;
-            document.getElementById('txt-typecode').innerText = type;
-            document.getElementById('txt-airline').innerText = desc;
-            document.getElementById('txt-dist-main').innerText = closest._distKm.toFixed(1) + " km";
-            document.getElementById('txt-heading').innerText = track;
-            document.getElementById('txt-route-name').innerText = "Inside " + currentRadiusKm + " km overhead zone";
-            document.getElementById('txt-altitude').innerText = alt;
-            document.getElementById('txt-vrate').innerText = "Vertical: " + vrate;
-            document.getElementById('txt-speed').innerText = speed;
-            document.getElementById('txt-squawk').innerText = "Squawk: " + squawk;
-            document.getElementById('txt-model').innerText = `${type} • HEX: ${(closest.hex || "").toUpperCase()}`;
-            document.getElementById('txt-coords').innerText = `LAT: ${closest.lat.toFixed(4)} | LON: ${closest.lon.toFixed(4)}`;
-
-            if (lastOverheadHex !== closest.hex) {
-                playAirportChime(false);
-                fetchAircraftPhoto(closest.hex, closest.r);
-                lastOverheadHex = closest.hex;
-            }
-        } else {
-            displayClearSky(nearestAnyDist);
-            lastOverheadHex = "";
-        }
-    }
-
-    function displayClearSky(nearestAnyDist) {
-        clearPhoto();
-        document.getElementById('txt-callsign').innerText = "CLEAR";
-        document.getElementById('txt-reg-badge').innerText = "--";
-        document.getElementById('txt-typecode').innerText = "ADS-B";
-        document.getElementById('txt-airline').innerText = "No planes inside " + currentRadiusKm + " km";
-        document.getElementById('txt-dist-main').innerText = "-- km";
-        document.getElementById('txt-heading').innerText = "---°";
-        document.getElementById('txt-route-name').innerText = nearestAnyDist < 999
-            ? `Nearest airborne plane is ${nearestAnyDist.toFixed(1)} km away`
-            : "Scanning local airspace...";
-        document.getElementById('txt-altitude').innerText = "0 ft";
-        document.getElementById('txt-vrate').innerText = "Vertical: 0 fpm";
-        document.getElementById('txt-speed').innerText = "0 kts";
-        document.getElementById('txt-squawk').innerText = "Squawk: ----";
-        document.getElementById('txt-model').innerText = "Airspace clear";
-        document.getElementById('txt-coords').innerText = `CENTER: ${userLat.toFixed(4)}, ${userLon.toFixed(4)}`;
-    }
-
-    function calculateDistanceKm(lat1, lon1, lat2, lon2) {
-        const R = 6371;
-        const dLat = (lat2 - lat1) * Math.PI / 180;
-        const dLon = (lon2 - lon1) * Math.PI / 180;
-        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLon/2) * Math.sin(dLon/2);
-        return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
-    }
-
-    function playAirportChime(force) {
-        if ((audioMuted && !force) || !audioCtx) return;
-        try {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            const now = audioCtx.currentTime;
-            const osc1 = audioCtx.createOscillator(), gain1 = audioCtx.createGain();
-            osc1.type = 'sine'; osc1.frequency.setValueAtTime(698.46, now);
-            gain1.gain.setValueAtTime(0.3, now); gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
-            osc1.connect(gain1); gain1.connect(audioCtx.destination);
-            osc1.start(now); osc1.stop(now + 0.8);
-
-            const osc2 = audioCtx.createOscillator(), gain2 = audioCtx.createGain();
-            osc2.type = 'sine'; osc2.frequency.setValueAtTime(523.25, now + 0.4);
-            gain2.gain.setValueAtTime(0.3, now + 0.4); gain2.gain.exponentialRampToValueAtTime(0.001, now + 1.4);
-            osc2.connect(gain2); gain2.connect(audioCtx.destination);
-            osc2.start(now + 0.4); osc2.stop(now + 1.4);
-        } catch(e) {}
-    }
-
-    fetchLiveOverhead();
-    setInterval(fetchLiveOverhead, 5000);
-</script>
 </body>
 </html>
