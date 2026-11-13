@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>FlightWall Desk Display</title>
+    <title>FlightWall Desk Display v2</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { 
@@ -171,11 +172,7 @@
             border: 1px solid #33333e;
             gap: 6px;
         }
-        .coord-inputs {
-            display: flex;
-            gap: 8px;
-            width: 100%;
-        }
+        .coord-inputs { display: flex; gap: 8px; width: 100%; }
         .coord-inputs input {
             width: 50%;
             background: #0d0d0f;
@@ -207,11 +204,11 @@
         <div class="card-header">
             <div class="header-left">
                 <div class="flight-badges">
-                    <span id="txt-callsign" class="badge-callsign">SCANNING</span>
-                    <span id="txt-reg-badge" class="badge-code">--</span>
+                    <span id="txt-callsign" class="badge-callsign">READY</span>
+                    <span id="txt-reg-badge" class="badge-code">V2</span>
                     <span id="txt-typecode" class="badge-type">ADS-B</span>
                 </div>
-                <div id="txt-airline" class="airline-title">Connecting to ADS-B feeds...</div>
+                <div id="txt-airline" class="airline-title">Initializing radar sweep...</div>
             </div>
             <div class="photo-box">
                 <span class="photo-placeholder" id="photo-placeholder">✈</span>
@@ -228,7 +225,7 @@
                     <span class="plane-icon">✈</span>
                     <span id="txt-heading" class="airport-code">---°</span>
                 </div>
-                <div id="txt-route-name" class="sub-value">Strict 10 km overhead filter active</div>
+                <div id="txt-route-name" class="sub-value">Strict overhead filter active</div>
             </div>
 
             <div class="data-box">
@@ -245,13 +242,13 @@
 
             <div class="data-box full-width">
                 <div class="label">Aircraft & Telemetry</div>
-                <div id="txt-model" class="value" style="font-size: 16px;">Waiting for transponder...</div>
+                <div id="txt-model" class="value" style="font-size: 16px;">Starting sweep...</div>
                 <div id="txt-coords" class="sub-value" style="color: #ff9900; font-weight: 700; margin-top: 4px; font-family: monospace;">LAT: -- | LON: --</div>
             </div>
         </div>
 
         <div class="utility-bar">
-            <span class="status-tag"><span class="dot" id="status-dot"></span> <span id="txt-mode-tag">INIT...</span></span>
+            <span class="status-tag"><span class="dot" id="status-dot"></span> <span id="txt-mode-tag">BOOTING...</span></span>
             <div>
                 <button type="button" class="util-btn" id="btn-audio-toggle">CHIME: ON</button>
                 <button type="button" class="util-btn" id="btn-open-settings">⚙ SETTINGS</button>
@@ -271,6 +268,11 @@
             <span id="val-radius" style="font-weight:bold; color:#ff9900; font-size:16px; min-width: 50px;">10 km</span>
             <button type="button" class="btn-adj" id="btn-rad-plus">+</button>
         </div>
+    </div>
+
+    <div class="settings-row">
+        <span style="font-weight: 700; font-size: 13px; color: #a1a1aa;">SIMULATION MODE:</span>
+        <button type="button" class="util-btn" id="btn-sim-toggle" style="background: #3f3f46; color: #fff;">OFF</button>
     </div>
 
     <div class="settings-col">
@@ -298,13 +300,22 @@
     let currentRadiusKm = parseInt(localStorage.getItem('fw_radius')) || 10;
     let userLat = parseFloat(localStorage.getItem('fw_lat')) || -33.8200;
     let userLon = parseFloat(localStorage.getItem('fw_lon')) || 18.4900;
-    let gpsLocked = false;
+    let simMode = localStorage.getItem('fw_sim') === 'true';
     let lastOverheadHex = "";
     let photoCache = {};
+    let simIndex = 0;
+
+    // Real South African & international aircraft registrations/hexes for accurate photo lookup in test mode
+    const simFlights = [
+        { hex: '00b0b1', flight: 'SFR841', r: 'ZS-SJT', t: 'B738', desc: 'FlySafair Boeing 737-800', alt_baro: 3420, gs: 245, track: 185, baro_rate: -450, squawk: '1200', latOffset: 0.015, lonOffset: 0.010, dist: 2.1 },
+        { hex: '40608f', flight: 'BAW059', r: 'G-XLEB', t: 'A388', desc: 'British Airways Airbus A380-800', alt_baro: 11200, gs: 365, track: 205, baro_rate: -1100, squawk: '7000', latOffset: -0.035, lonOffset: -0.025, dist: 5.4 },
+        { hex: '00a8c4', flight: 'SAA323', r: 'ZS-SZD', t: 'A320', desc: 'South African Airways A320', alt_baro: 6800, gs: 280, track: 95, baro_rate: 0, squawk: '2000', latOffset: 0.012, lonOffset: -0.018, dist: 3.2 }
+    ];
 
     document.getElementById('val-radius').innerText = currentRadiusKm + ' km';
     document.getElementById('inp-lat').value = userLat.toFixed(4);
     document.getElementById('inp-lon').value = userLon.toFixed(4);
+    updateSimButtonUI();
 
     document.body.addEventListener('pointerdown', function initAudio() {
         if (!audioCtx) {
@@ -324,6 +335,19 @@
         document.getElementById('inp-lon').value = userLon.toFixed(4);
         document.getElementById('settings-overlay').style.display = 'flex';
     });
+
+    document.getElementById('btn-sim-toggle').addEventListener('click', function() {
+        simMode = !simMode;
+        localStorage.setItem('fw_sim', simMode);
+        updateSimButtonUI();
+    });
+
+    function updateSimButtonUI() {
+        const btn = document.getElementById('btn-sim-toggle');
+        btn.innerText = simMode ? "ON (TEST)" : "OFF";
+        btn.style.background = simMode ? "#4ade80" : "#3f3f46";
+        btn.style.color = simMode ? "#000" : "#fff";
+    }
 
     document.getElementById('btn-grab-gps').addEventListener('click', function() {
         this.innerText = "LOCATING...";
@@ -357,6 +381,7 @@
         }
         localStorage.setItem('fw_radius', currentRadiusKm);
         document.getElementById('settings-overlay').style.display = 'none';
+        lastOverheadHex = "";
         fetchLiveOverhead();
     });
 
@@ -374,27 +399,9 @@
         playAirportChime(true);
     });
 
-    function startGpsWatcher() {
-        if (navigator.geolocation) {
-            navigator.geolocation.watchPosition(
-                function(pos) {
-                    userLat = pos.coords.latitude;
-                    userLon = pos.coords.longitude;
-                    localStorage.setItem('fw_lat', userLat);
-                    localStorage.setItem('fw_lon', userLon);
-                    gpsLocked = true;
-                },
-                function() {
-                    gpsLocked = false;
-                },
-                { enableHighAccuracy: true, maximumAge: 15000, timeout: 10000 }
-            );
-        }
-    }
-
-    async function fetchFromSource(url) {
+    async function fetchJsonSafe(url) {
         const controller = new AbortController();
-        const id = setTimeout(() => controller.abort(), 4500);
+        const id = setTimeout(() => controller.abort(), 5000);
         try {
             const res = await fetch(url, { signal: controller.signal });
             clearTimeout(id);
@@ -408,53 +415,84 @@
     }
 
     async function fetchLiveOverhead() {
-        // Query a 25nm (~46km) box so we always confirm live feed connectivity, then strictly filter to currentRadiusKm
-        const queryNm = Math.max(25, Math.ceil(currentRadiusKm * 0.6));
-        const latStr = userLat.toFixed(4);
-        const lonStr = userLon.toFixed(4);
-
-        const endpoints = [
-            `https://api.airplanes.live/v2/point/${latStr}/${lonStr}/${queryNm}`,
-            `https://opendata.adsb.fi/api/v2/lat/${latStr}/lon/${lonStr}/dist/${queryNm}`,
-            `https://api.adsb.lol/v2/lat/${latStr}/lon/${lonStr}/dist/${queryNm}`
-        ];
-
-        let aircraftList = null;
-        let activeSource = "";
-
-        for (let i = 0; i < endpoints.length; i++) {
-            const list = await fetchFromSource(endpoints[i]);
-            if (Array.isArray(list)) {
-                aircraftList = list;
-                activeSource = i === 0 ? "AIRPLANES.LIVE" : (i === 1 ? "ADSB.FI" : "ADSB.LOL");
-                break;
+        try {
+            if (simMode) {
+                document.getElementById('status-dot').style.backgroundColor = "#38bdf8";
+                document.getElementById('status-dot').style.boxShadow = "0 0 8px #38bdf8";
+                document.getElementById('txt-mode-tag').innerText = "SIMULATION MODE";
+                
+                const sample = simFlights[simIndex % simFlights.length];
+                simIndex++;
+                const hydratedPlane = {
+                    ...sample,
+                    lat: userLat + sample.latOffset,
+                    lon: userLon + sample.lonOffset
+                };
+                processPlanes([hydratedPlane]);
+                return;
             }
+
+            document.getElementById('txt-mode-tag').innerText = "POLLING ADS-B...";
+
+            const queryNm = Math.max(25, Math.ceil(currentRadiusKm * 0.6));
+            const latStr = userLat.toFixed(4);
+            const lonStr = userLon.toFixed(4);
+            const rawTarget = `https://api.adsb.lol/v2/lat/${latStr}/lon/${lonStr}/dist/${queryNm}`;
+
+            // Try direct CORS-friendly endpoints first, then CORS-relayed adsb.lol so GitHub Pages never gets blocked
+            const endpoints = [
+                { name: "AIRPLANES.LIVE", url: `https://api.airplanes.live/v2/point/${latStr}/${lonStr}/${queryNm}` },
+                { name: "ADSB.LOL", url: rawTarget },
+                { name: "ADSB.FI", url: `https://opendata.adsb.fi/api/v2/lat/${latStr}/lon/${lonStr}/dist/${queryNm}` },
+                { name: "ADSB-RELAY", url: `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(rawTarget)}` }
+            ];
+
+            let aircraftList = null;
+            let activeSource = "";
+
+            for (let i = 0; i < endpoints.length; i++) {
+                const list = await fetchJsonSafe(endpoints[i].url);
+                if (Array.isArray(list)) {
+                    aircraftList = list;
+                    activeSource = endpoints[i].name;
+                    break;
+                }
+            }
+
+            if (!aircraftList) {
+                document.getElementById('status-dot').style.backgroundColor = "#ef4444";
+                document.getElementById('status-dot').style.boxShadow = "0 0 8px #ef4444";
+                document.getElementById('txt-mode-tag').innerText = "NETWORK / CORS BLOCKED";
+                document.getElementById('txt-airline').innerText = "Unable to reach ADS-B servers";
+                document.getElementById('txt-model').innerText = "Check internet or try Simulation Mode in Settings";
+                return;
+            }
+
+            document.getElementById('status-dot').style.backgroundColor = "#4ade80";
+            document.getElementById('status-dot').style.boxShadow = "0 0 8px #4ade80";
+            document.getElementById('txt-mode-tag').innerText = `${activeSource} (${aircraftList.length} IN AREA)`;
+
+            processPlanes(aircraftList);
+        } catch (err) {
+            document.getElementById('txt-mode-tag').innerText = "SCRIPT ERROR";
         }
-
-        if (!aircraftList) {
-            document.getElementById('status-dot').style.backgroundColor = "#ef4444";
-            document.getElementById('status-dot').style.boxShadow = "0 0 8px #ef4444";
-            document.getElementById('txt-mode-tag').innerText = "FEED BLOCKED / OFFLINE";
-            return;
-        }
-
-        document.getElementById('status-dot').style.backgroundColor = "#4ade80";
-        document.getElementById('status-dot').style.boxShadow = "0 0 8px #4ade80";
-        document.getElementById('txt-mode-tag').innerText = `${activeSource} (${aircraftList.length} IN AREA)`;
-
-        processPlanes(aircraftList);
     }
 
     function fetchAircraftPhoto(hex, reg) {
         const cleanHex = (hex || "").replace(/[^a-fA-F0-9]/g, '').toLowerCase();
-        if (!cleanHex) { clearPhoto(); return; }
+        if (!cleanHex && !reg) { clearPhoto(); return; }
 
-        if (photoCache[cleanHex] !== undefined) {
-            applyPhoto(photoCache[cleanHex]);
+        const cacheKey = cleanHex || reg;
+        if (photoCache[cacheKey] !== undefined) {
+            applyPhoto(photoCache[cacheKey]);
             return;
         }
 
-        fetch(`https://api.planespotters.net/pub/photos/hex/${cleanHex}`)
+        const primaryUrl = cleanHex
+            ? `https://api.planespotters.net/pub/photos/hex/${cleanHex}`
+            : `https://api.planespotters.net/pub/photos/reg/${encodeURIComponent(reg.trim())}`;
+
+        fetch(primaryUrl)
             .then(res => res.json())
             .then(data => {
                 if (data && data.photos && data.photos.length > 0) {
@@ -463,9 +501,9 @@
                         url: p.thumbnail_large ? p.thumbnail_large.src : p.thumbnail.src,
                         photographer: p.photographer || "Planespotters"
                     };
-                    photoCache[cleanHex] = photoObj;
+                    photoCache[cacheKey] = photoObj;
                     applyPhoto(photoObj);
-                } else if (reg) {
+                } else if (cleanHex && reg) {
                     return fetch(`https://api.planespotters.net/pub/photos/reg/${encodeURIComponent(reg.trim())}`)
                         .then(r => r.json())
                         .then(regData => {
@@ -475,15 +513,15 @@
                                     url: p.thumbnail_large ? p.thumbnail_large.src : p.thumbnail.src,
                                     photographer: p.photographer || "Planespotters"
                                 };
-                                photoCache[cleanHex] = photoObj;
+                                photoCache[cacheKey] = photoObj;
                                 applyPhoto(photoObj);
                             } else {
-                                photoCache[cleanHex] = null;
+                                photoCache[cacheKey] = null;
                                 clearPhoto();
                             }
                         });
                 } else {
-                    photoCache[cleanHex] = null;
+                    photoCache[cacheKey] = null;
                     clearPhoto();
                 }
             })
@@ -522,7 +560,7 @@
             if (ac.lat == null || ac.lon == null) continue;
             if (ac.alt_baro === "ground") continue;
 
-            const distKm = calculateDistanceKm(userLat, userLon, ac.lat, ac.lon);
+            const distKm = simMode ? ac.dist : calculateDistanceKm(userLat, userLon, ac.lat, ac.lon);
             if (distKm < nearestAnyDist) nearestAnyDist = distKm;
 
             if (distKm <= currentRadiusKm && distKm < minDist) {
@@ -578,12 +616,12 @@
         document.getElementById('txt-heading').innerText = "---°";
         document.getElementById('txt-route-name').innerText = nearestAnyDist < 999
             ? `Nearest airborne plane is ${nearestAnyDist.toFixed(1)} km away`
-            : "Scanning every 5 seconds...";
+            : "Scanning every 6 seconds...";
         document.getElementById('txt-altitude').innerText = "0 ft";
         document.getElementById('txt-vrate').innerText = "Vertical: 0 fpm";
         document.getElementById('txt-speed').innerText = "0 kts";
         document.getElementById('txt-squawk').innerText = "Squawk: ----";
-        document.getElementById('txt-model').innerText = gpsLocked ? "Phone GPS Active" : "Using Saved Home GPS";
+        document.getElementById('txt-model').innerText = "Airspace clear";
         document.getElementById('txt-coords').innerText = `CENTER: ${userLat.toFixed(4)}, ${userLon.toFixed(4)}`;
     }
 
@@ -616,9 +654,8 @@
         } catch(e) {}
     }
 
-    startGpsWatcher();
     fetchLiveOverhead();
-    setInterval(fetchLiveOverhead, 5000);
+    setInterval(fetchLiveOverhead, 6000);
 </script>
 </body>
 </html>
