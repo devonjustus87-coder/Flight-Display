@@ -6,7 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>FlightWall Desk Display v2</title>
+    <title>FlightWall Live</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { 
@@ -20,9 +20,7 @@
             overflow: hidden; 
             padding: 12px; 
         }
-        
         .container { width: 100%; max-width: 480px; }
-        
         .fw-card { 
             background-color: #18181c; 
             border-radius: 14px; 
@@ -30,7 +28,6 @@
             overflow: hidden; 
             border: 1px solid #2d2d35; 
         }
-        
         .card-header { 
             background-color: #121215; 
             display: flex; 
@@ -39,48 +36,24 @@
             border-bottom: 1px solid #2d2d35; 
             min-height: 96px;
         }
-        .header-left {
-            padding: 14px 16px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            flex: 1;
-        }
+        .header-left { padding: 14px 16px; display: flex; flex-direction: column; justify-content: center; flex: 1; }
         .flight-badges { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
         .badge-callsign { background-color: #ff9900; color: #000; font-weight: 800; font-size: 17px; padding: 3px 8px; border-radius: 5px; }
         .badge-code { background-color: #3f3f46; color: #fff; font-size: 12px; padding: 4px 7px; border-radius: 5px; font-weight: 600; }
         .badge-type { background-color: #0284c7; color: #fff; font-size: 12px; padding: 4px 7px; border-radius: 5px; font-weight: 600; }
-        
         .airline-title { font-size: 14px; color: #e4e4e7; margin-top: 8px; font-weight: 600; }
 
         .photo-box {
-            width: 155px;
-            position: relative;
-            background-color: #1f1f26;
-            border-left: 1px solid #2d2d35;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: 155px; position: relative; background-color: #1f1f26;
+            border-left: 1px solid #2d2d35; overflow: hidden; display: flex;
+            align-items: center; justify-content: center;
         }
-        .photo-box img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: none;
-        }
+        .photo-box img { width: 100%; height: 100%; object-fit: cover; display: none; }
         .photo-placeholder { font-size: 26px; color: #3f3f46; }
         .photo-credit {
-            position: absolute;
-            bottom: 0; left: 0; right: 0;
-            background: rgba(0, 0, 0, 0.72);
-            color: #ffffff;
-            font-size: 9px;
-            padding: 2px 5px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            display: none;
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: rgba(0, 0, 0, 0.72); color: #ffffff; font-size: 9px;
+            padding: 2px 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: none;
         }
         
         .card-body { padding: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -96,104 +69,39 @@
         .plane-icon { color: #ff9900; font-size: 18px; }
         
         .utility-bar { 
-            background-color: #121215; 
-            padding: 10px 16px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            border-top: 1px solid #2d2d35; 
-            font-size: 11px; 
+            background-color: #121215; padding: 10px 16px; display: flex; 
+            justify-content: space-between; align-items: center; border-top: 1px solid #2d2d35; font-size: 11px; 
         }
         .status-tag { color: #4ade80; font-weight: 700; display: flex; align-items: center; gap: 6px; }
         .dot { width: 8px; height: 8px; background-color: #4ade80; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #4ade80; }
         
         .util-btn { 
-            background: #222227; 
-            border: 1px solid #444452; 
-            color: #fff; 
-            padding: 8px 10px; 
-            border-radius: 6px; 
-            font-weight: 600; 
-            cursor: pointer; 
-            touch-action: manipulation;
+            background: #222227; border: 1px solid #444452; color: #fff; 
+            padding: 8px 10px; border-radius: 6px; font-weight: 600; cursor: pointer; 
         }
-        .util-btn:active { background: #3f3f46; }
-
         .overlay-screen { 
-            position: fixed; 
-            top: 0; left: 0; right: 0; bottom: 0; 
-            background: rgba(13, 13, 15, 0.97); 
-            z-index: 50; 
-            display: none; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            text-align: center; 
-            padding: 20px; 
-            overflow-y: auto;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
+            background: rgba(13, 13, 15, 0.97); z-index: 50; display: none; 
+            flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; 
         }
         .btn-action { 
-            background: #38bdf8; 
-            color: #000; 
-            border: none; 
-            padding: 14px 28px; 
-            font-weight: 800; 
-            font-size: 16px; 
-            cursor: pointer; 
-            border-radius: 8px; 
-            margin-top: 16px; 
-            width: 100%; 
-            max-width: 340px;
-            touch-action: manipulation;
+            background: #38bdf8; color: #000; border: none; padding: 14px 28px; 
+            font-weight: 800; font-size: 16px; cursor: pointer; border-radius: 8px; margin-top: 16px; width: 100%; max-width: 340px; 
         }
-        
         .settings-row { 
-            display: flex; 
-            align-items: center; 
-            justify-content: space-between; 
-            width: 100%; 
-            max-width: 340px; 
-            margin: 8px 0; 
-            background: #18181c; 
-            padding: 12px 14px; 
-            border-radius: 8px; 
-            border: 1px solid #33333e; 
+            display: flex; align-items: center; justify-content: space-between; 
+            width: 100%; max-width: 340px; margin: 8px 0; background: #18181c; padding: 12px 14px; border-radius: 8px; border: 1px solid #33333e; 
         }
         .settings-col {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            width: 100%;
-            max-width: 340px;
-            margin: 8px 0;
-            background: #18181c;
-            padding: 12px 14px;
-            border-radius: 8px;
-            border: 1px solid #33333e;
-            gap: 6px;
+            display: flex; flex-direction: column; align-items: flex-start;
+            width: 100%; max-width: 340px; margin: 8px 0; background: #18181c; padding: 12px 14px; border-radius: 8px; border: 1px solid #33333e; gap: 6px;
         }
         .coord-inputs { display: flex; gap: 8px; width: 100%; }
         .coord-inputs input {
-            width: 50%;
-            background: #0d0d0f;
-            border: 1px solid #444452;
-            color: #fff;
-            padding: 8px;
-            border-radius: 6px;
-            font-family: monospace;
-            font-size: 13px;
+            width: 50%; background: #0d0d0f; border: 1px solid #444452; color: #fff; padding: 8px; border-radius: 6px; font-family: monospace; font-size: 13px;
         }
         .btn-adj { 
-            background: #33333e; 
-            border: none; 
-            color: #fff; 
-            width: 38px; 
-            height: 38px; 
-            font-size: 18px; 
-            cursor: pointer; 
-            border-radius: 6px; 
-            font-weight: bold; 
-            touch-action: manipulation;
+            background: #33333e; border: none; color: #fff; width: 38px; height: 38px; font-size: 18px; cursor: pointer; border-radius: 6px; font-weight: bold; 
         }
     </style>
 </head>
@@ -204,11 +112,11 @@
         <div class="card-header">
             <div class="header-left">
                 <div class="flight-badges">
-                    <span id="txt-callsign" class="badge-callsign">READY</span>
-                    <span id="txt-reg-badge" class="badge-code">V2</span>
+                    <span id="txt-callsign" class="badge-callsign">LIVE</span>
+                    <span id="txt-reg-badge" class="badge-code">CORS</span>
                     <span id="txt-typecode" class="badge-type">ADS-B</span>
                 </div>
-                <div id="txt-airline" class="airline-title">Initializing radar sweep...</div>
+                <div id="txt-airline" class="airline-title">Connecting to live airspace...</div>
             </div>
             <div class="photo-box">
                 <span class="photo-placeholder" id="photo-placeholder">✈</span>
@@ -225,7 +133,7 @@
                     <span class="plane-icon">✈</span>
                     <span id="txt-heading" class="airport-code">---°</span>
                 </div>
-                <div id="txt-route-name" class="sub-value">Strict overhead filter active</div>
+                <div id="txt-route-name" class="sub-value">Filtering strict radius</div>
             </div>
 
             <div class="data-box">
@@ -242,13 +150,13 @@
 
             <div class="data-box full-width">
                 <div class="label">Aircraft & Telemetry</div>
-                <div id="txt-model" class="value" style="font-size: 16px;">Starting sweep...</div>
+                <div id="txt-model" class="value" style="font-size: 16px;">Waiting for packet...</div>
                 <div id="txt-coords" class="sub-value" style="color: #ff9900; font-weight: 700; margin-top: 4px; font-family: monospace;">LAT: -- | LON: --</div>
             </div>
         </div>
 
         <div class="utility-bar">
-            <span class="status-tag"><span class="dot" id="status-dot"></span> <span id="txt-mode-tag">BOOTING...</span></span>
+            <span class="status-tag"><span class="dot" id="status-dot"></span> <span id="txt-mode-tag">CONNECTING</span></span>
             <div>
                 <button type="button" class="util-btn" id="btn-audio-toggle">CHIME: ON</button>
                 <button type="button" class="util-btn" id="btn-open-settings">⚙ SETTINGS</button>
@@ -257,7 +165,6 @@
     </div>
 </div>
 
-<!-- Settings Modal Screen -->
 <div id="settings-overlay" class="overlay-screen">
     <h2 style="color: #38bdf8; margin-bottom: 12px; font-size: 20px;">RADAR SETTINGS</h2>
     
@@ -268,11 +175,6 @@
             <span id="val-radius" style="font-weight:bold; color:#ff9900; font-size:16px; min-width: 50px;">10 km</span>
             <button type="button" class="btn-adj" id="btn-rad-plus">+</button>
         </div>
-    </div>
-
-    <div class="settings-row">
-        <span style="font-weight: 700; font-size: 13px; color: #a1a1aa;">SIMULATION MODE:</span>
-        <button type="button" class="util-btn" id="btn-sim-toggle" style="background: #3f3f46; color: #fff;">OFF</button>
     </div>
 
     <div class="settings-col">
@@ -298,24 +200,14 @@
     let audioCtx = null;
     let audioMuted = false;
     let currentRadiusKm = parseInt(localStorage.getItem('fw_radius')) || 10;
-    let userLat = parseFloat(localStorage.getItem('fw_lat')) || -33.8200;
+    let userLat = parseFloat(localStorage.getItem('fw_lat')) || -33.8200; // Default Table View area
     let userLon = parseFloat(localStorage.getItem('fw_lon')) || 18.4900;
-    let simMode = localStorage.getItem('fw_sim') === 'true';
     let lastOverheadHex = "";
     let photoCache = {};
-    let simIndex = 0;
-
-    // Real South African & international aircraft registrations/hexes for accurate photo lookup in test mode
-    const simFlights = [
-        { hex: '00b0b1', flight: 'SFR841', r: 'ZS-SJT', t: 'B738', desc: 'FlySafair Boeing 737-800', alt_baro: 3420, gs: 245, track: 185, baro_rate: -450, squawk: '1200', latOffset: 0.015, lonOffset: 0.010, dist: 2.1 },
-        { hex: '40608f', flight: 'BAW059', r: 'G-XLEB', t: 'A388', desc: 'British Airways Airbus A380-800', alt_baro: 11200, gs: 365, track: 205, baro_rate: -1100, squawk: '7000', latOffset: -0.035, lonOffset: -0.025, dist: 5.4 },
-        { hex: '00a8c4', flight: 'SAA323', r: 'ZS-SZD', t: 'A320', desc: 'South African Airways A320', alt_baro: 6800, gs: 280, track: 95, baro_rate: 0, squawk: '2000', latOffset: 0.012, lonOffset: -0.018, dist: 3.2 }
-    ];
 
     document.getElementById('val-radius').innerText = currentRadiusKm + ' km';
     document.getElementById('inp-lat').value = userLat.toFixed(4);
     document.getElementById('inp-lon').value = userLon.toFixed(4);
-    updateSimButtonUI();
 
     document.body.addEventListener('pointerdown', function initAudio() {
         if (!audioCtx) {
@@ -335,19 +227,6 @@
         document.getElementById('inp-lon').value = userLon.toFixed(4);
         document.getElementById('settings-overlay').style.display = 'flex';
     });
-
-    document.getElementById('btn-sim-toggle').addEventListener('click', function() {
-        simMode = !simMode;
-        localStorage.setItem('fw_sim', simMode);
-        updateSimButtonUI();
-    });
-
-    function updateSimButtonUI() {
-        const btn = document.getElementById('btn-sim-toggle');
-        btn.innerText = simMode ? "ON (TEST)" : "OFF";
-        btn.style.background = simMode ? "#4ade80" : "#3f3f46";
-        btn.style.color = simMode ? "#000" : "#fff";
-    }
 
     document.getElementById('btn-grab-gps').addEventListener('click', function() {
         this.innerText = "LOCATING...";
@@ -399,82 +278,32 @@
         playAirportChime(true);
     });
 
-    async function fetchJsonSafe(url) {
-        const controller = new AbortController();
-        const id = setTimeout(() => controller.abort(), 5000);
-        try {
-            const res = await fetch(url, { signal: controller.signal });
-            clearTimeout(id);
-            if (!res.ok) return null;
-            const data = await res.json();
-            return data.ac || data.aircraft || null;
-        } catch (e) {
-            clearTimeout(id);
-            return null;
-        }
-    }
-
     async function fetchLiveOverhead() {
         try {
-            if (simMode) {
-                document.getElementById('status-dot').style.backgroundColor = "#38bdf8";
-                document.getElementById('status-dot').style.boxShadow = "0 0 8px #38bdf8";
-                document.getElementById('txt-mode-tag').innerText = "SIMULATION MODE";
-                
-                const sample = simFlights[simIndex % simFlights.length];
-                simIndex++;
-                const hydratedPlane = {
-                    ...sample,
-                    lat: userLat + sample.latOffset,
-                    lon: userLon + sample.lonOffset
-                };
-                processPlanes([hydratedPlane]);
-                return;
-            }
-
-            document.getElementById('txt-mode-tag').innerText = "POLLING ADS-B...";
-
-            const queryNm = Math.max(25, Math.ceil(currentRadiusKm * 0.6));
+            const queryNm = Math.max(30, Math.ceil(currentRadiusKm * 0.7));
             const latStr = userLat.toFixed(4);
             const lonStr = userLon.toFixed(4);
-            const rawTarget = `https://api.adsb.lol/v2/lat/${latStr}/lon/${lonStr}/dist/${queryNm}`;
+            
+            // Route through public CORS proxy so mobile browser doesn't block the json response
+            const targetUrl = `https://api.adsb.lol/v2/lat/${latStr}/lon/${lonStr}/dist/${queryNm}`;
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
 
-            // Try direct CORS-friendly endpoints first, then CORS-relayed adsb.lol so GitHub Pages never gets blocked
-            const endpoints = [
-                { name: "AIRPLANES.LIVE", url: `https://api.airplanes.live/v2/point/${latStr}/${lonStr}/${queryNm}` },
-                { name: "ADSB.LOL", url: rawTarget },
-                { name: "ADSB.FI", url: `https://opendata.adsb.fi/api/v2/lat/${latStr}/lon/${lonStr}/dist/${queryNm}` },
-                { name: "ADSB-RELAY", url: `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(rawTarget)}` }
-            ];
+            const res = await fetch(proxyUrl);
+            if (!res.ok) throw new Error("Network response failed");
+            const data = await res.json();
 
-            let aircraftList = null;
-            let activeSource = "";
-
-            for (let i = 0; i < endpoints.length; i++) {
-                const list = await fetchJsonSafe(endpoints[i].url);
-                if (Array.isArray(list)) {
-                    aircraftList = list;
-                    activeSource = endpoints[i].name;
-                    break;
-                }
+            if (data && Array.isArray(data.ac)) {
+                document.getElementById('status-dot').style.backgroundColor = "#4ade80";
+                document.getElementById('status-dot').style.boxShadow = "0 0 8px #4ade80";
+                document.getElementById('txt-mode-tag').innerText = `LIVE (${data.ac.length} NEAR)`;
+                processPlanes(data.ac);
+            } else {
+                throw new Error("Invalid data format");
             }
-
-            if (!aircraftList) {
-                document.getElementById('status-dot').style.backgroundColor = "#ef4444";
-                document.getElementById('status-dot').style.boxShadow = "0 0 8px #ef4444";
-                document.getElementById('txt-mode-tag').innerText = "NETWORK / CORS BLOCKED";
-                document.getElementById('txt-airline').innerText = "Unable to reach ADS-B servers";
-                document.getElementById('txt-model').innerText = "Check internet or try Simulation Mode in Settings";
-                return;
-            }
-
-            document.getElementById('status-dot').style.backgroundColor = "#4ade80";
-            document.getElementById('status-dot').style.boxShadow = "0 0 8px #4ade80";
-            document.getElementById('txt-mode-tag').innerText = `${activeSource} (${aircraftList.length} IN AREA)`;
-
-            processPlanes(aircraftList);
         } catch (err) {
-            document.getElementById('txt-mode-tag').innerText = "SCRIPT ERROR";
+            document.getElementById('status-dot').style.backgroundColor = "#ef4444";
+            document.getElementById('status-dot').style.boxShadow = "0 0 8px #ef4444";
+            document.getElementById('txt-mode-tag').innerText = "RECONNECTING...";
         }
     }
 
@@ -503,23 +332,6 @@
                     };
                     photoCache[cacheKey] = photoObj;
                     applyPhoto(photoObj);
-                } else if (cleanHex && reg) {
-                    return fetch(`https://api.planespotters.net/pub/photos/reg/${encodeURIComponent(reg.trim())}`)
-                        .then(r => r.json())
-                        .then(regData => {
-                            if (regData && regData.photos && regData.photos.length > 0) {
-                                const p = regData.photos[0];
-                                const photoObj = {
-                                    url: p.thumbnail_large ? p.thumbnail_large.src : p.thumbnail.src,
-                                    photographer: p.photographer || "Planespotters"
-                                };
-                                photoCache[cacheKey] = photoObj;
-                                applyPhoto(photoObj);
-                            } else {
-                                photoCache[cacheKey] = null;
-                                clearPhoto();
-                            }
-                        });
                 } else {
                     photoCache[cacheKey] = null;
                     clearPhoto();
@@ -560,7 +372,7 @@
             if (ac.lat == null || ac.lon == null) continue;
             if (ac.alt_baro === "ground") continue;
 
-            const distKm = simMode ? ac.dist : calculateDistanceKm(userLat, userLon, ac.lat, ac.lon);
+            const distKm = calculateDistanceKm(userLat, userLon, ac.lat, ac.lon);
             if (distKm < nearestAnyDist) nearestAnyDist = distKm;
 
             if (distKm <= currentRadiusKm && distKm < minDist) {
@@ -616,7 +428,7 @@
         document.getElementById('txt-heading').innerText = "---°";
         document.getElementById('txt-route-name').innerText = nearestAnyDist < 999
             ? `Nearest airborne plane is ${nearestAnyDist.toFixed(1)} km away`
-            : "Scanning every 6 seconds...";
+            : "Scanning local airspace...";
         document.getElementById('txt-altitude').innerText = "0 ft";
         document.getElementById('txt-vrate').innerText = "Vertical: 0 fpm";
         document.getElementById('txt-speed').innerText = "0 kts";
@@ -655,7 +467,7 @@
     }
 
     fetchLiveOverhead();
-    setInterval(fetchLiveOverhead, 6000);
+    setInterval(fetchLiveOverhead, 5000);
 </script>
 </body>
 </html>
