@@ -20,7 +20,7 @@
             padding: 12px; 
         }
         
-        .container { width: 100%; max-width: 460px; }
+        .container { width: 100%; max-width: 480px; }
         
         .fw-card { 
             background-color: #18181c; 
@@ -30,21 +30,66 @@
             border: 1px solid #2d2d35; 
         }
         
+        /* Top Split Header: Badges on Left, Aircraft Photo on Right */
         .card-header { 
             background-color: #121215; 
-            padding: 14px 16px; 
             display: flex; 
             justify-content: space-between; 
-            align-items: center; 
+            align-items: stretch; 
             border-bottom: 1px solid #2d2d35; 
+            min-height: 96px;
         }
-        .flight-badges { display: flex; gap: 8px; align-items: center; }
-        .badge-callsign { background-color: #ff9900; color: #000; font-weight: 800; font-size: 17px; padding: 4px 10px; border-radius: 5px; }
-        .badge-code { background-color: #3f3f46; color: #fff; font-size: 13px; padding: 4px 8px; border-radius: 5px; font-weight: 600; }
-        .badge-type { background-color: #0284c7; color: #fff; font-size: 13px; padding: 4px 8px; border-radius: 5px; font-weight: 600; }
+        .header-left {
+            padding: 14px 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            flex: 1;
+        }
+        .flight-badges { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+        .badge-callsign { background-color: #ff9900; color: #000; font-weight: 800; font-size: 17px; padding: 3px 8px; border-radius: 5px; }
+        .badge-code { background-color: #3f3f46; color: #fff; font-size: 12px; padding: 4px 7px; border-radius: 5px; font-weight: 600; }
+        .badge-type { background-color: #0284c7; color: #fff; font-size: 12px; padding: 4px 7px; border-radius: 5px; font-weight: 600; }
         
-        .airline-title { font-size: 15px; color: #a1a1aa; padding: 10px 16px 0 16px; font-weight: 600; }
+        .airline-title { font-size: 14px; color: #e4e4e7; margin-top: 8px; font-weight: 600; }
+
+        /* Aircraft Photo Box (FR24 Style) */
+        .photo-box {
+            width: 155px;
+            position: relative;
+            background-color: #1f1f26;
+            border-left: 1px solid #2d2d35;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .photo-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+        }
+        .photo-placeholder {
+            font-size: 26px;
+            color: #3f3f46;
+        }
+        .photo-credit {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.72);
+            color: #ffffff;
+            font-size: 9px;
+            padding: 2px 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: none;
+        }
         
+        /* Main Telemetry Grid */
         .card-body { padding: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         
         .data-box { background-color: #222227; border-radius: 10px; padding: 12px 14px; border: 1px solid #33333e; }
@@ -139,14 +184,22 @@
 
 <div class="container">
     <div class="fw-card">
+        <!-- Top Header with FR24-Style Photo Corner -->
         <div class="card-header">
-            <div class="flight-badges">
-                <span id="txt-callsign" class="badge-callsign">SCANNING</span>
-                <span id="txt-reg-badge" class="badge-code">--</span>
-                <span id="txt-typecode" class="badge-type">ADS-B</span>
+            <div class="header-left">
+                <div class="flight-badges">
+                    <span id="txt-callsign" class="badge-callsign">SCANNING</span>
+                    <span id="txt-reg-badge" class="badge-code">--</span>
+                    <span id="txt-typecode" class="badge-type">ADS-B</span>
+                </div>
+                <div id="txt-airline" class="airline-title">Initializing Live Radar...</div>
+            </div>
+            <div class="photo-box">
+                <span class="photo-placeholder" id="photo-placeholder">✈</span>
+                <img id="plane-photo" alt="Aircraft Photo">
+                <div class="photo-credit" id="photo-credit"></div>
             </div>
         </div>
-        <div id="txt-airline" class="airline-title">Initializing Live Radar...</div>
 
         <div class="card-body">
             <div class="data-box full-width">
@@ -216,21 +269,17 @@
     let userLat = -33.8200; // Cape Town fallback
     let userLon = 18.4900;
     let lastOverheadHex = "";
+    let photoCache = {}; // Cache photos by hex so we don't spam the API every 5s
 
-    // Unlock Web Audio on first tap anywhere on the screen
+    // Unlock Web Audio on first tap anywhere on screen
     document.body.addEventListener('pointerdown', function initAudio() {
         if (!audioCtx) {
             const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-            if (AudioContextClass) {
-                audioCtx = new AudioContextClass();
-            }
+            if (AudioContextClass) audioCtx = new AudioContextClass();
         }
-        if (audioCtx && audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
     }, { once: true });
 
-    // Proper event listeners for mobile reliability
     document.getElementById('btn-audio-toggle').addEventListener('click', function() {
         audioMuted = !audioMuted;
         this.innerText = audioMuted ? "CHIME: OFF" : "CHIME: ON";
@@ -281,7 +330,6 @@
     }
 
     function fetchLiveOverhead() {
-        // Convert km to nautical miles (adsb.lol uses nautical miles, max 250)
         const radiusNm = Math.max(2, Math.ceil(currentRadiusKm * 0.539957));
         const url = `https://api.adsb.lol/v2/lat/${userLat.toFixed(4)}/lon/${userLon.toFixed(4)}/dist/${radiusNm}`;
 
@@ -304,6 +352,81 @@
             });
     }
 
+    function fetchAircraftPhoto(hex, reg) {
+        const cleanHex = (hex || "").replace(/[^a-fA-F0-9]/g, '').toLowerCase();
+        if (!cleanHex) {
+            clearPhoto();
+            return;
+        }
+
+        // Return cached photo immediately if already fetched
+        if (photoCache[cleanHex] !== undefined) {
+            applyPhoto(photoCache[cleanHex]);
+            return;
+        }
+
+        // 1. Primary: Planespotters.net public API by ICAO hex
+        fetch(`https://api.planespotters.net/pub/photos/hex/${cleanHex}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.photos && data.photos.length > 0) {
+                    const p = data.photos[0];
+                    const photoObj = {
+                        url: p.thumbnail_large ? p.thumbnail_large.src : p.thumbnail.src,
+                        photographer: p.photographer || "Planespotters"
+                    };
+                    photoCache[cleanHex] = photoObj;
+                    applyPhoto(photoObj);
+                } else if (reg) {
+                    // 2. Fallback: Search by tail registration if hex had no match
+                    return fetch(`https://api.planespotters.net/pub/photos/reg/${encodeURIComponent(reg.trim())}`)
+                        .then(r => r.json())
+                        .then(regData => {
+                            if (regData && regData.photos && regData.photos.length > 0) {
+                                const p = regData.photos[0];
+                                const photoObj = {
+                                    url: p.thumbnail_large ? p.thumbnail_large.src : p.thumbnail.src,
+                                    photographer: p.photographer || "Planespotters"
+                                };
+                                photoCache[cleanHex] = photoObj;
+                                applyPhoto(photoObj);
+                            } else {
+                                photoCache[cleanHex] = null;
+                                clearPhoto();
+                            }
+                        });
+                } else {
+                    photoCache[cleanHex] = null;
+                    clearPhoto();
+                }
+            })
+            .catch(() => {
+                clearPhoto();
+            });
+    }
+
+    function applyPhoto(photoObj) {
+        const imgEl = document.getElementById('plane-photo');
+        const creditEl = document.getElementById('photo-credit');
+        const placeholderEl = document.getElementById('photo-placeholder');
+
+        if (photoObj && photoObj.url) {
+            imgEl.src = photoObj.url;
+            imgEl.style.display = "block";
+            placeholderEl.style.display = "none";
+            creditEl.innerText = "© " + photoObj.photographer;
+            creditEl.style.display = "block";
+        } else {
+            clearPhoto();
+        }
+    }
+
+    function clearPhoto() {
+        document.getElementById('plane-photo').style.display = "none";
+        document.getElementById('photo-credit').style.display = "none";
+        document.getElementById('photo-placeholder').style.display = "block";
+    }
+
     function processPlanes(aircraftList) {
         let closest = null;
         let minDist = 999999;
@@ -311,7 +434,7 @@
         for (let i = 0; i < aircraftList.length; i++) {
             const ac = aircraftList[i];
             if (ac.lat == null || ac.lon == null) continue;
-            if (ac.alt_baro === "ground") continue; // Ignore parked planes
+            if (ac.alt_baro === "ground") continue;
 
             const distKm = calculateDistanceKm(userLat, userLon, ac.lat, ac.lon);
             if (distKm <= currentRadiusKm && distKm < minDist) {
@@ -348,6 +471,7 @@
 
             if (lastOverheadHex !== closest.hex) {
                 playAirportChime(false);
+                fetchAircraftPhoto(closest.hex, closest.r);
                 lastOverheadHex = closest.hex;
             }
         } else {
@@ -357,6 +481,7 @@
     }
 
     function displayClearSky() {
+        clearPhoto();
         document.getElementById('txt-callsign').innerText = "CLEAR";
         document.getElementById('txt-reg-badge').innerText = "--";
         document.getElementById('txt-typecode').innerText = "ADS-B";
@@ -401,7 +526,6 @@
         } catch(e) {}
     }
 
-    // Boot immediately on page load
     getUserLocation();
     setInterval(fetchLiveOverhead, 5000);
 </script>
